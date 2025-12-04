@@ -470,23 +470,25 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleCreateGroup() throws IOException {
-        String groupName = dis.readUTF();
+        String userProvidedName = dis.readUTF();
         String groupFullName = dis.readUTF();
         int memberCount = dis.readInt();
 
+        // Tạo groupId duy nhất bằng UUID để tránh ghi đè nhóm cũ
+        String groupId = "GRP_" + System.currentTimeMillis() + "_" + java.util.UUID.randomUUID().toString().substring(0, 8);
+
         GroupInfo newGroup = new GroupInfo();
-        newGroup.groupName = groupName;
+        newGroup.groupName = groupId;  // Sử dụng ID duy nhất làm key
         newGroup.groupFullName = groupFullName;
 
         for (int i = 0; i < memberCount; i++) {
             newGroup.members.add(dis.readUTF());
         }
 
-        if (groups.containsKey(groupName) || clients.containsKey(groupName)) {
-            sendSystemMessage("Hệ thống: Tên nhóm '" + groupName + "' đã tồn tại hoặc trùng tên user.");
-            return;
-        }
-        groups.put(groupName, newGroup);
+        // Không cần kiểm tra trùng tên vì ID luôn duy nhất
+        groups.put(groupId, newGroup);
+        
+        addSystemLog("Nhóm mới được tạo: " + groupFullName + " (ID: " + groupId + ")");
 
         SwingUtilities.invokeLater(() -> {
             if (groupListModel != null) {
@@ -549,6 +551,13 @@ public class ClientHandler implements Runnable {
     private void handleVoiceCallRequest() throws IOException {
         String targetId = dis.readUTF();
 
+        // Kiểm tra xem người gọi có đang trong cuộc gọi khác không
+        if (activeCalls.containsKey(this.clientId)) {
+            addSystemLog("SERVER: Từ chối gọi vì " + this.clientId + " đang trong cuộc gọi khác");
+            this.sendVoiceCallDeclined(targetId);
+            return;
+        }
+
         if (groups.containsKey(targetId)) {
             GroupInfo group = groups.get(targetId);
             addSystemLog("SERVER: Yêu cầu gọi NHÓM (Voice): " + this.clientId + " -> Nhóm " + group.groupFullName);
@@ -603,10 +612,23 @@ public class ClientHandler implements Runnable {
 
     private void handleVoiceCallDecline() throws IOException {
         String callerUsername = dis.readUTF();
-        ClientHandler callerHandler = clients.get(callerUsername);
         addSystemLog("Từ chối gọi (Voice): " + this.clientId + " -> " + callerUsername);
-        if (callerHandler != null) {
-            callerHandler.sendVoiceCallDeclined(this.clientId);
+        
+        // Nếu đây là cuộc gọi nhóm, chỉ cần xóa activeCalls của người gọi
+        // Kiểm tra xem callerUsername là groupId hay userId
+        if (groups.containsKey(callerUsername)) {
+            // Đây là từ chối cuộc gọi nhóm - xóa activeCalls của người này
+            activeCalls.remove(this.clientId);
+            addSystemLog("Đã xóa activeCalls cho " + this.clientId + " (từ chối tham gia nhóm " + callerUsername + ")");
+        } else {
+            // Cuộc gọi 1-1
+            ClientHandler callerHandler = clients.get(callerUsername);
+            if (callerHandler != null) {
+                callerHandler.sendVoiceCallDeclined(this.clientId);
+            }
+            // Xóa activeCalls của cả hai bên
+            activeCalls.remove(this.clientId);
+            activeCalls.remove(callerUsername);
         }
     }
 
@@ -620,6 +642,13 @@ public class ClientHandler implements Runnable {
 
     private void handleVideoCallRequest() throws IOException {
         String targetId = dis.readUTF();
+
+        // Kiểm tra xem người gọi có đang trong cuộc gọi khác không
+        if (activeCalls.containsKey(this.clientId)) {
+            addSystemLog("SERVER: Từ chối video call vì " + this.clientId + " đang trong cuộc gọi khác");
+            this.sendVideoCallDeclined(targetId);
+            return;
+        }
 
         if (groups.containsKey(targetId)) {
             GroupInfo group = groups.get(targetId);
@@ -675,10 +704,22 @@ public class ClientHandler implements Runnable {
 
     private void handleVideoCallDecline() throws IOException {
         String callerUsername = dis.readUTF();
-        ClientHandler callerHandler = clients.get(callerUsername);
         addSystemLog("Từ chối VIDEO CALL: " + this.clientId + " -> " + callerUsername);
-        if (callerHandler != null) {
-            callerHandler.sendVideoCallDeclined(this.clientId);
+        
+        // Nếu đây là cuộc gọi nhóm, chỉ cần xóa activeCalls của người này
+        if (groups.containsKey(callerUsername)) {
+            // Đây là từ chối cuộc gọi video nhóm
+            activeCalls.remove(this.clientId);
+            addSystemLog("Đã xóa activeCalls cho " + this.clientId + " (từ chối video nhóm " + callerUsername + ")");
+        } else {
+            // Cuộc gọi video 1-1
+            ClientHandler callerHandler = clients.get(callerUsername);
+            if (callerHandler != null) {
+                callerHandler.sendVideoCallDeclined(this.clientId);
+            }
+            // Xóa activeCalls của cả hai bên
+            activeCalls.remove(this.clientId);
+            activeCalls.remove(callerUsername);
         }
     }
 

@@ -56,6 +56,8 @@ public class NetworkController {
         void onCallAccepted(String targetUser, boolean isVideo);
         void onCallDeclined(String targetUser, boolean isVideo);
         void onCallEnded(String fromUser, boolean isVideo);
+        // Callback mới để reset UI khi cuộc gọi kết thúc từ ActiveCallWindow
+        default void onCallStoppedLocally() {}
     }
     
     public NetworkController(ChatState chatState, MessageHandler handler) {
@@ -615,39 +617,71 @@ public class NetworkController {
     }
     
     public void stopCall() {
-        if (!chatState.isInCall() && !chatState.isInVideoCall()) return;
-        
+        stopCallInternal(true);
+    }
+    
+    /**
+     * Dừng cuộc gọi mà không gửi hangup signal
+     * Dùng khi cuộc gọi bị từ chối từ server hoặc kết thúc từ phía server
+     */
+    public void stopCallWithoutSignal() {
+        stopCallInternal(false);
+    }
+    
+    private void stopCallInternal(boolean sendHangupSignal) {
+        boolean wasInCall = chatState.isInCall();
         boolean wasVideoCall = chatState.isInVideoCall();
+        String partnerUsername = chatState.getCallPartnerUsername();
+        
+        // Reset trạng thái trước
         chatState.setInCall(false);
         chatState.setInVideoCall(false);
+        chatState.setCallPartnerUsername(null);
         
-        // Gửi tín hiệu gác máy
-        try {
-            synchronized (dos) {
-                if(wasVideoCall) {
-                    dos.writeInt(Constants.TYPE_VIDEO_CALL_HANGUP);
-                } else {
-                    dos.writeInt(Constants.TYPE_VOICE_CALL_HANGUP);
+        // Gửi tín hiệu gác máy nếu được yêu cầu và đang trong cuộc gọi
+        if (sendHangupSignal && (wasInCall || wasVideoCall) && partnerUsername != null && dos != null) {
+            try {
+                synchronized (dos) {
+                    if(wasVideoCall) {
+                        dos.writeInt(Constants.TYPE_VIDEO_CALL_HANGUP);
+                    } else {
+                        dos.writeInt(Constants.TYPE_VOICE_CALL_HANGUP);
+                    }
+                    dos.writeUTF(partnerUsername);
+                    dos.flush();
                 }
-                dos.writeUTF(chatState.getCallPartnerUsername());
-                dos.flush();
+            } catch (IOException e) { 
+                // Ignore - connection may be closed
             }
-        } catch (IOException e) { }
+        }
         
         // Dọn dẹp Thread
         if (audioCaptureThread != null) { audioCaptureThread.interrupt(); audioCaptureThread = null; }
-        if (callMicLine != null) { callMicLine.stop(); callMicLine.close(); callMicLine = null; }
-        if (callSpeakerLine != null) { callSpeakerLine.stop(); callSpeakerLine.close(); callSpeakerLine = null; }
+        if (callMicLine != null) { 
+            try { callMicLine.stop(); callMicLine.close(); } catch (Exception e) {}
+            callMicLine = null; 
+        }
+        if (callSpeakerLine != null) { 
+            try { callSpeakerLine.stop(); callSpeakerLine.close(); } catch (Exception e) {}
+            callSpeakerLine = null; 
+        }
         if (videoCaptureThread != null) { videoCaptureThread.interrupt(); videoCaptureThread = null; }
-        if (webcam != null && webcam.isOpen()) { webcam.close(); webcam = null; }
-        
-        // Đóng cửa sổ gọi
-        if (activeCallWindow != null) {
-            activeCallWindow.close();
-            activeCallWindow = null;
+        if (webcam != null) { 
+            try { if (webcam.isOpen()) webcam.close(); } catch (Exception e) {}
+            webcam = null; 
         }
         
-        chatState.setCallPartnerUsername(null);
+        // Đóng cửa sổ gọi trên EDT và thông báo cho Client reset UI
+        SwingUtilities.invokeLater(() -> {
+            if (activeCallWindow != null) {
+                activeCallWindow.close();
+                activeCallWindow = null;
+            }
+            // Thông báo cho Client để reset UI
+            if (messageHandler != null) {
+                messageHandler.onCallStoppedLocally();
+            }
+        });
     }
     
     public void closeOutgoingCallDialog() {

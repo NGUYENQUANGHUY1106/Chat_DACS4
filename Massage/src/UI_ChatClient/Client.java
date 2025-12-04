@@ -203,17 +203,28 @@ if (callDialog.isAccepted()) {
             @Override
             public void onCallDeclined(String targetUser, boolean isVideo) {
                 SwingUtilities.invokeLater(() -> {
+                    // Đóng dialog và dừng cuộc gọi nếu đang có (không gửi hangup vì server đã từ chối)
                     networkController.closeOutgoingCallDialog();
+                    networkController.stopCallWithoutSignal();
+                    resetCallUI();
                     JOptionPane.showMessageDialog(Client.this, 
                         (isVideo ? "Video call" : "Cuộc gọi") + " đã bị từ chối", 
                         "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 });
-                resetCallUI();
             }
             
             @Override
             public void onCallEnded(String fromUser, boolean isVideo) {
-                networkController.stopCall();
+                SwingUtilities.invokeLater(() -> {
+                    // Cuộc gọi kết thúc từ server, không cần gửi hangup
+                    networkController.stopCallWithoutSignal();
+                    resetCallUI();
+                });
+            }
+            
+            @Override
+            public void onCallStoppedLocally() {
+                // Được gọi khi cuộc gọi kết thúc từ ActiveCallWindow (bấm nút kết thúc)
                 resetCallUI();
             }
         });

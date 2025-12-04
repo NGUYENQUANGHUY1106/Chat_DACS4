@@ -229,61 +229,55 @@ public class ChatServerCore {
      * Hàm kết thúc cuộc gọi, đã gộp phiên bản hỗ trợ Group Call.
      */
     public static synchronized void endCall(String userA, String userB) {
-        if (userA == null || userB == null) return;
+        if (userA == null) return;
 
-        // 1. Kiểm tra xem userA có đang trong cuộc gọi nhóm tạm thời không
-        String contextId = activeCalls.get(userA); // có thể là ID người hoặc ID nhóm
+        // Lấy contextId của userA (có thể là ID người hoặc ID nhóm)
+        String contextId = activeCalls.get(userA);
+        
+        // Xóa activeCalls của userA trước
+        activeCalls.remove(userA);
+        addSystemLog("Đã xóa activeCalls của: " + userA);
 
         if (contextId != null && groups.containsKey(contextId)) {
+            // Đây là cuộc gọi nhóm - CHỈ xóa activeCalls, KHÔNG xóa thành viên khỏi nhóm chat
             GroupInfo group = groups.get(contextId);
-            if (group.members.contains(userA)) {
-                group.members.remove(userA); // Xóa người này khỏi nhóm
-                addSystemLog("Đã xóa " + userA + " khỏi Group Call " + contextId);
-
-                // Gửi ENDED cho chính userA
-                ClientHandler handlerA = clients.get(userA);
-                if (handlerA != null) {
-                    try {
-                        handlerA.dos.writeInt(TYPE_VOICE_CALL_ENDED);
-                        handlerA.dos.writeUTF(contextId);
-                        handlerA.dos.flush();
-                    } catch (IOException e) { /* ignore */ }
-                }
-
-                // Nếu nhóm trống thì xóa nhóm
-                if (group.members.isEmpty()) {
-                    groups.remove(contextId);
-                    addSystemLog("Đã xóa Nhóm Tạm thời: " + contextId);
-                } else {
-                    // Thông báo cho thành viên còn lại
-                    String notification = "Hệ thống: " +
-                            (clients.containsKey(userA) ? clients.get(userA).fullName : userA) +
-                            " đã rời cuộc gọi.";
-                    for (String memberId : group.members) {
-                        ClientHandler handler = clients.get(memberId);
-                        if (handler != null) {
-                            handler.sendSystemMessage(notification);
-                        }
-                    }
+            
+            // Gửi ENDED cho chính userA
+            ClientHandler handlerA = clients.get(userA);
+            if (handlerA != null) {
+                try {
+                    handlerA.dos.writeInt(TYPE_VOICE_CALL_ENDED);
+                    handlerA.dos.writeUTF(contextId);
+                    handlerA.dos.flush();
+                } catch (IOException e) { /* ignore */ }
+            }
+            
+            // Kiểm tra xem còn ai trong cuộc gọi nhóm không
+            boolean anyoneStillInCall = false;
+            for (String memberId : group.members) {
+                if (activeCalls.containsKey(memberId) && contextId.equals(activeCalls.get(memberId))) {
+                    anyoneStillInCall = true;
+                    break;
                 }
             }
-        }
-
-        // 2. Xử lý xóa activeCalls cho 1-1 như cũ
-        if (activeCalls.remove(userA) == null) {
+            
+            if (!anyoneStillInCall) {
+                addSystemLog("Cuộc gọi nhóm " + contextId + " đã kết thúc (không còn ai)");
+            }
+            
+        } else if (userB != null) {
+            // Cuộc gọi 1-1
             activeCalls.remove(userB);
-            return;
-        }
-        activeCalls.remove(userB);
-        addSystemLog("Đã kết thúc cuộc gọi (TCP/UDP) giữa: " + userA + " và " + userB);
+            addSystemLog("Đã kết thúc cuộc gọi (TCP/UDP) giữa: " + userA + " và " + userB);
 
-        ClientHandler handlerB = clients.get(userB);
-        if (handlerB != null) {
-            try {
-                handlerB.dos.writeInt(TYPE_VOICE_CALL_ENDED);
-                handlerB.dos.writeUTF(userA);
-                handlerB.dos.flush();
-            } catch (IOException e) { /* ignore */ }
+            ClientHandler handlerB = clients.get(userB);
+            if (handlerB != null) {
+                try {
+                    handlerB.dos.writeInt(TYPE_VOICE_CALL_ENDED);
+                    handlerB.dos.writeUTF(userA);
+                    handlerB.dos.flush();
+                } catch (IOException e) { /* ignore */ }
+            }
         }
     }
 

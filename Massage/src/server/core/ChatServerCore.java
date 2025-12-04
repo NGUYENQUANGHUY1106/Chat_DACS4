@@ -68,8 +68,7 @@ public class ChatServerCore {
     public static final int TYPE_JOIN_CALL_REQUEST = 33;
     public static final int TYPE_CALL_STATUS_UPDATE = 34;
     public static final int TYPE_CALL_JOINED_SUCCESS = 35;
-
-    // ======================================================
+// ======================================================
     // UDP
     // ======================================================
     public static final int TCP_PORT = 1234;
@@ -94,7 +93,6 @@ public class ChatServerCore {
     // ======================================================
     public static final ConcurrentHashMap<String, ClientHandler> clients = new ConcurrentHashMap<>();
     public static final ConcurrentHashMap<String, GroupInfo> groups = new ConcurrentHashMap<>();
-    // activeCalls: key = userId, value = "đối tượng cuộc gọi" (user khác hoặc groupId)
     public static final ConcurrentHashMap<String, String> activeCalls = new ConcurrentHashMap<>();
 
     // ======================================================
@@ -137,7 +135,7 @@ public class ChatServerCore {
         userManagementPanel = userPanel;
         fileManagementPanel = filePanel;
         groupListModel = groupModel;
-        groupList = groupListComp;
+groupList = groupListComp;
         memberListModel = memberModel;
         memberList = memberListComp;
         chatClientListModel = chatClientModel;
@@ -211,7 +209,7 @@ public class ChatServerCore {
             List<GroupInfo> filteredGroups = new ArrayList<>();
             for (GroupInfo group : groups.values()) {
                 if (group.members.contains(handler.clientId)) {
-                    filteredGroups.add(group);
+filteredGroups.add(group);
                 }
             }
             handler.sendUserListUpdate(clients, filteredGroups);
@@ -226,34 +224,28 @@ public class ChatServerCore {
         }
     }
 
+    /**
+     * Hàm kết thúc cuộc gọi, đã gộp phiên bản hỗ trợ Group Call.
+     */
     public static synchronized void endCall(String userA, String userB) {
         if (userA == null) return;
-
 
         // Lấy contextId của userA (có thể là ID người hoặc ID nhóm)
         String contextId = activeCalls.get(userA);
         
         // Xóa activeCalls của userA trước
         activeCalls.remove(userA);
-        	addSystemLog("Đã xóa activeCalls của: " + userA);
+        addSystemLog("Đã xóa activeCalls của: " + userA);
 
-        // 1. Kiểm tra xem userA đang được map tới contextId nào (có thể là userId khác hoặc groupId)
-        String contextId = activeCalls.get(userA);
-
-
-        // ==== TRƯỜNG HỢP CALL NHÓM (contextId là groupId tồn tại trong groups) ====
         if (contextId != null && groups.containsKey(contextId)) {
             // Đây là cuộc gọi nhóm - CHỈ xóa activeCalls, KHÔNG xóa thành viên khỏi nhóm chat
             GroupInfo group = groups.get(contextId);
-
             
             // Gửi ENDED cho chính userA
-
             ClientHandler handlerA = clients.get(userA);
             if (handlerA != null) {
                 try {
                     handlerA.dos.writeInt(TYPE_VOICE_CALL_ENDED);
-
                     handlerA.dos.writeUTF(contextId);
                     handlerA.dos.flush();
                 } catch (IOException e) { /* ignore */ }
@@ -274,42 +266,8 @@ public class ChatServerCore {
             
         } else if (userB != null) {
             // Cuộc gọi 1-1
-
-                    handlerA.dos.writeUTF(contextId);   // client dùng để biết call nào kết thúc
-                    handlerA.dos.flush();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
-
-            // Gửi thông báo system message cho các thành viên khác (không đụng tới group.members)
-            String notification = "Hệ thống: " +
-                    (clients.containsKey(userA) ? clients.get(userA).fullName : userA) +
-                    " đã rời cuộc gọi nhóm.";
-            for (String memberId : group.members) {
-                if (memberId.equals(userA)) continue;
-                ClientHandler handler = clients.get(memberId);
-                if (handler != null) {
-                    handler.sendSystemMessage(notification);
-                }
-            }
-
-            // Chỉ xóa trạng thái activeCalls cho userA
-            activeCalls.remove(userA);
-            addSystemLog("Đã kết thúc cuộc gọi nhóm " + contextId + " cho user " + userA);
-
-            // Với group call, userB không còn ý nghĩa → return luôn
-            return;
-        }
-
-        // ==== TRƯỜNG HỢP CALL 1-1 (mapping không phải groupId) ====
-        // Giữ lại logic cũ nhưng KHÔNG xóa group
-        if (activeCalls.remove(userA) == null) {
-            // Nếu userA không có trong map thì thử xóa userB rồi thoát
-
             activeCalls.remove(userB);
             addSystemLog("Đã kết thúc cuộc gọi (TCP/UDP) giữa: " + userA + " và " + userB);
-
 
             ClientHandler handlerB = clients.get(userB);
             if (handlerB != null) {
@@ -318,16 +276,6 @@ public class ChatServerCore {
                     handlerB.dos.writeUTF(userA);
                     handlerB.dos.flush();
                 } catch (IOException e) { /* ignore */ }
-
-        ClientHandler handlerB = clients.get(userB);
-        if (handlerB != null) {
-            try {
-                handlerB.dos.writeInt(TYPE_VOICE_CALL_ENDED);
-                handlerB.dos.writeUTF(userA);
-                handlerB.dos.flush();
-            } catch (IOException e) {
-                // ignore
-
             }
         }
     }
@@ -337,7 +285,7 @@ public class ChatServerCore {
     // ======================================================
     public static GroupInfo findGroupByName(String fullName) {
         if (fullName == null) return null;
-        for (GroupInfo group : groups.values()) {
+for (GroupInfo group : groups.values()) {
             if (fullName.equals(group.groupFullName)) {
                 return group;
             }
@@ -345,7 +293,6 @@ public class ChatServerCore {
         return null;
     }
 
-    // Cập nhật panel thành viên khi chọn nhóm
     public static void updateMemberPanel(String selectedGroupFullName) {
         SwingUtilities.invokeLater(() -> {
             if (memberListModel == null) return;
@@ -364,19 +311,6 @@ public class ChatServerCore {
                     }
                     memberListModel.addElement(new UserDisplay(memberId, fullName));
                 }
-            }
-        });
-    }
-
-    // Refresh lại panel thành viên theo nhóm đang được chọn trên list
-    public static void refreshMemberPanelForCurrentSelection() {
-        SwingUtilities.invokeLater(() -> {
-            if (groupList == null) return;
-            String selectedGroupFullName = groupList.getSelectedValue();
-            if (selectedGroupFullName != null) {
-                updateMemberPanel(selectedGroupFullName);
-            } else if (memberListModel != null) {
-                memberListModel.clear();
             }
         });
     }

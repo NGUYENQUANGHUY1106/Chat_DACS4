@@ -495,7 +495,7 @@ public class ClientHandler implements Runnable {
                 groupListModel.addElement(groupFullName);
             }
             // nếu admin đang chọn đúng nhóm này thì cập nhật luôn panel thành viên
-            refreshMemberPanelForCurrentSelection();
+            
         });
 
         broadcastUserListUpdate();

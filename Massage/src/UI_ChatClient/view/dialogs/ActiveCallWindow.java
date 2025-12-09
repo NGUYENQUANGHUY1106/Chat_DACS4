@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import UI_ChatClient.view.utils.IconUtils;
+import UI_ChatClient.controller.ScreenCaptureController;
+import UI_ChatClient.controller.NetworkController;
 
 /**
  * Cửa sổ hiển thị khi đang trong cuộc gọi
@@ -11,14 +13,17 @@ import UI_ChatClient.view.utils.IconUtils;
 public class ActiveCallWindow extends JFrame {
     private boolean isMicMuted = false;
     private boolean isCamOff = false;
-    private boolean isSpeakerOn = true;
+    private boolean isScreenSharing = false;
     
     private JButton btnMute;
     private JButton btnCam;
-    private JButton btnSpeaker;
+    private JButton btnScreenShare;
     private JButton btnEnd;
     private JPanel videoContainer;
     private JLabel lblCallTime;
+    private JLabel lblScreenShareDisplay;
+    private ScreenCaptureController screenCaptureController;
+    private NetworkController networkController;
     private javax.swing.Timer callTimer;
     private int callSeconds = 0;
     private String partnerDisplayName;
@@ -27,18 +32,20 @@ public class ActiveCallWindow extends JFrame {
     // Callback để thông báo kết thúc cuộc gọi
     private Runnable onEndCall;
     
-    // Màu sắc theme
-    private final Color darkBgColor = new Color(18, 18, 18);
-    private final Color cardBgColor = new Color(38, 38, 38);
-    private final Color accentGreen = new Color(34, 197, 94);
-    private final Color accentRed = new Color(239, 68, 68);
-    private final Color textPrimary = Color.WHITE;
-    private final Color textSecondary = new Color(156, 163, 175);
+    // Màu sắc theme xanh ngọc nhạt
+    private final Color darkBgColor = new Color(240, 253, 250);         // Nền trắng xanh ngọc
+    private final Color cardBgColor = new Color(255, 255, 255);         // Trắng tiền khiết
+    private final Color accentGreen = new Color(16, 185, 129);          // Xanh ngọc accent
+    private final Color accentRed = new Color(239, 68, 68);             // Đỏ
+    private final Color textPrimary = new Color(19, 78, 74);            // Xanh đen
+    private final Color textSecondary = new Color(94, 234, 212);        // Xanh ngọc nhạt
     
-    public ActiveCallWindow(String partnerName, boolean isVideoCall, Runnable onEndCall) {
+    public ActiveCallWindow(String partnerName, boolean isVideoCall, Runnable onEndCall, NetworkController networkController) {
         this.partnerDisplayName = partnerName;
         this.isVideo = isVideoCall;
         this.onEndCall = onEndCall;
+        this.networkController = networkController;
+        this.screenCaptureController = new ScreenCaptureController();
         
         setTitle("Cuộc gọi với " + partnerName);
         setSize(640, 720);
@@ -48,7 +55,7 @@ public class ActiveCallWindow extends JFrame {
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         
-        // Panel chính với gradient background
+        // Panel chính với gradient trắng xanh ngọc
         JPanel mainPanel = new JPanel(new BorderLayout(0, 0)) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -56,8 +63,8 @@ public class ActiveCallWindow extends JFrame {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
                 GradientPaint gradient = new GradientPaint(
-                    0, 0, new Color(30, 30, 45),
-                    0, getHeight(), darkBgColor
+                    0, 0, new Color(255, 255, 255),
+                    0, getHeight(), new Color(204, 251, 241)
                 );
                 g2.setPaint(gradient);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 25, 25);
@@ -103,9 +110,10 @@ public class ActiveCallWindow extends JFrame {
                     int centerX = getWidth() / 2;
                     int centerY = getHeight() / 2 - 30;
                     
+                    // Vòng tròn xanh ngọc gradient
                     for (int i = 3; i >= 1; i--) {
                         int alpha = 20 + (3 - i) * 15;
-                        g2.setColor(new Color(99, 102, 241, alpha));
+                        g2.setColor(new Color(94, 234, 212, alpha));
                         int radius = 80 + i * 25;
                         g2.fillOval(centerX - radius, centerY - radius, radius * 2, radius * 2);
                     }
@@ -131,8 +139,8 @@ public class ActiveCallWindow extends JFrame {
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     
                     GradientPaint borderGradient = new GradientPaint(
-                        0, 0, new Color(99, 102, 241),
-                        getWidth(), getHeight(), new Color(168, 85, 247)
+                        0, 0, new Color(94, 234, 212),
+                        getWidth(), getHeight(), new Color(45, 212, 191)
                     );
                     g2.setPaint(borderGradient);
                     g2.fillOval(0, 0, getWidth(), getHeight());
@@ -179,8 +187,11 @@ public class ActiveCallWindow extends JFrame {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(cardBgColor);
+                g2.setColor(new Color(255, 255, 255, 230));
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30);
+                g2.setColor(new Color(94, 234, 212, 50));
+                g2.setStroke(new BasicStroke(2));
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 30, 30);
                 g2.dispose();
             }
         };
@@ -188,13 +199,13 @@ public class ActiveCallWindow extends JFrame {
         controlPanel.setOpaque(false);
         controlPanel.setBorder(new javax.swing.border.EmptyBorder(10, 15, 10, 15));
         
-        btnMute = createControlButton("mic.png", "Tắt tiếng", new Color(75, 85, 99));
+        btnMute = createControlButton("mic.png", "Tắt tiếng", new Color(204, 251, 241));
         btnMute.addActionListener(e -> toggleMic());
         
-        btnSpeaker = createControlButton("speaker.png", "Loa ngoài", new Color(75, 85, 99));
-        btnSpeaker.addActionListener(e -> toggleSpeaker());
+        btnScreenShare = createControlButton("screen_share.png", "Chia sẻ màn hình", new Color(204, 251, 241));
+        btnScreenShare.addActionListener(e -> toggleScreenShare());
         
-        btnCam = createControlButton("video.png", "Camera", new Color(75, 85, 99));
+        btnCam = createControlButton("video.png", "Camera", new Color(204, 251, 241));
         btnCam.addActionListener(e -> toggleCam());
         if (!isVideoCall) btnCam.setVisible(false);
         
@@ -205,7 +216,7 @@ public class ActiveCallWindow extends JFrame {
         });
         
         controlPanel.add(btnMute);
-        controlPanel.add(btnSpeaker);
+        controlPanel.add(btnScreenShare);
         if (isVideoCall) controlPanel.add(btnCam);
         controlPanel.add(btnEnd);
         
@@ -310,12 +321,60 @@ public class ActiveCallWindow extends JFrame {
         }
     }
     
-    private void toggleSpeaker() {
-        isSpeakerOn = !isSpeakerOn;
-        if (!isSpeakerOn) {
-            btnSpeaker.setToolTipText("Bật loa");
+    private void toggleScreenShare() {
+        if (!isScreenSharing) {
+            // Hiển thị dialog chọn nguồn
+            ScreenShareDialog dialog = new ScreenShareDialog(this);
+            dialog.setVisible(true);
+            
+            if (dialog.isConfirmed()) {
+                isScreenSharing = true;
+                btnScreenShare.setIcon(IconUtils.loadAndScaleIcon("stop.png", 26, 26));
+                btnScreenShare.setToolTipText("Dừng chia sẻ màn hình");
+                
+                // Tạo label để hiển thị màn hình được share
+                if (lblScreenShareDisplay == null) {
+                    lblScreenShareDisplay = new JLabel("Đang khởi động chia sẻ màn hình...", SwingConstants.CENTER);
+                    lblScreenShareDisplay.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+                    lblScreenShareDisplay.setForeground(textSecondary);
+                }
+                
+                // Clear videoContainer và thêm screen share display
+                videoContainer.removeAll();
+                videoContainer.add(lblScreenShareDisplay, BorderLayout.CENTER);
+                videoContainer.revalidate();
+                videoContainer.repaint();
+                
+                // Set listener để gửi frames qua network
+                if (networkController != null) {
+                    screenCaptureController.setListener(frame -> {
+                        networkController.sendScreenShareFrame(frame);
+                    });
+                }
+                
+                // Bắt đầu capture
+                if (dialog.isShareFullScreen()) {
+                    GraphicsDevice screen = dialog.getSelectedScreen();
+                    screenCaptureController.startFullScreenCapture(screen, lblScreenShareDisplay);
+                    System.out.println("Bắt đầu chia sẻ toàn màn hình");
+                } else {
+                    Window window = dialog.getSelectedWindow();
+                    screenCaptureController.startWindowCapture(window, lblScreenShareDisplay);
+                    System.out.println("Bắt đầu chia sẻ cửa sổ: " + 
+                        (window instanceof Frame ? ((Frame)window).getTitle() : "Unknown"));
+                }
+            }
         } else {
-            btnSpeaker.setToolTipText("Tắt loa");
+            // Dừng chia sẻ
+            isScreenSharing = false;
+            btnScreenShare.setIcon(IconUtils.loadAndScaleIcon("screen_share.png", 26, 26));
+            btnScreenShare.setToolTipText("Chia sẻ màn hình");
+            
+            screenCaptureController.stopCapture();
+            System.out.println("Dừng chia sẻ màn hình");
+            
+            // Restore video container về trạng thái ban đầu
+            restoreVideoContainer();
         }
     }
     
@@ -330,11 +389,77 @@ public class ActiveCallWindow extends JFrame {
         }
     }
     
+    private void restoreVideoContainer() {
+        videoContainer.removeAll();
+        
+        if (!isVideo) {
+            // Voice call - Hiển thị lại avatar
+            JPanel avatarPanel = new JPanel();
+            avatarPanel.setLayout(new BoxLayout(avatarPanel, BoxLayout.Y_AXIS));
+            avatarPanel.setOpaque(false);
+            avatarPanel.setBorder(new javax.swing.border.EmptyBorder(50, 0, 30, 0));
+            
+            JPanel avatarContainer = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    
+                    GradientPaint borderGradient = new GradientPaint(
+                        0, 0, new Color(94, 234, 212),
+                        getWidth(), getHeight(), new Color(45, 212, 191)
+                    );
+                    g2.setPaint(borderGradient);
+                    g2.fillOval(0, 0, getWidth(), getHeight());
+                    
+                    g2.setColor(cardBgColor);
+                    g2.fillOval(4, 4, getWidth() - 8, getHeight() - 8);
+                    
+                    g2.dispose();
+                }
+            };
+            avatarContainer.setOpaque(false);
+            avatarContainer.setPreferredSize(new Dimension(140, 140));
+            avatarContainer.setMaximumSize(new Dimension(140, 140));
+            avatarContainer.setLayout(new GridBagLayout());
+            avatarContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            JLabel lblAvatar = new JLabel(IconUtils.loadAndScaleIcon("avatar.jpg", 120, 120));
+            avatarContainer.add(lblAvatar);
+            
+            JLabel lblName = new JLabel(partnerDisplayName);
+            lblName.setFont(new Font("Segoe UI", Font.BOLD, 26));
+            lblName.setForeground(textPrimary);
+            lblName.setAlignmentX(Component.CENTER_ALIGNMENT);
+            lblName.setBorder(new javax.swing.border.EmptyBorder(25, 0, 8, 0));
+            
+            avatarPanel.add(Box.createVerticalGlue());
+            avatarPanel.add(avatarContainer);
+            avatarPanel.add(lblName);
+            avatarPanel.add(Box.createVerticalGlue());
+            
+            videoContainer.add(avatarPanel, BorderLayout.CENTER);
+        }
+        // Video call: có thể thêm logic restore video feed ở đây
+        
+        videoContainer.revalidate();
+        videoContainer.repaint();
+    }
+    
     public boolean isMicMuted() { return isMicMuted; }
     public boolean isCamOff() { return isCamOff; }
+    public boolean isScreenSharing() { return isScreenSharing; }
+    
+    public ScreenCaptureController getScreenCaptureController() {
+        return screenCaptureController;
+    }
     
     public void close() {
         if (callTimer != null) callTimer.stop();
+        if (screenCaptureController != null && isScreenSharing) {
+            screenCaptureController.stopCapture();
+        }
         this.dispose();
     }
 }

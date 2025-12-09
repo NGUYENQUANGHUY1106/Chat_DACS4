@@ -251,7 +251,7 @@ setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
             }
         });
         
-        setBounds(100, 100, 900, 633);
+        setBounds(100, 100, 1200, 800);
         setLocationRelativeTo(null);
         
         contentPane = new JPanel(new BorderLayout(0, 0));
@@ -273,19 +273,47 @@ setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         sidebarPanel.setBackground(Constants.SIDEBAR_BG_COLOR);
         sidebarPanel.setBorder(null);
         
-        // Header
-        JPanel sidebarHeaderPanel = new JPanel(new BorderLayout());
-        sidebarHeaderPanel.setBackground(Constants.SIDEBAR_BG_COLOR);
+        // Header với gradient
+        JPanel sidebarHeaderPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, new Color(255, 255, 255),
+                    0, getHeight(), Constants.SIDEBAR_BG_COLOR
+                );
+                g2.setPaint(gradient);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+            }
+        };
+        sidebarHeaderPanel.setOpaque(false);
         sidebarHeaderPanel.setBorder(new EmptyBorder(20, 20, 15, 20));
         
         JLabel lblAppName = new JLabel("ChatSphere");
         lblAppName.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        lblAppName.setForeground(Color.WHITE);
+        lblAppName.setForeground(Constants.PRIMARY_DARK);
         
-        JButton btnNewGroup = new JButton("+");
+        JButton btnNewGroup = new JButton("+") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, Constants.PRIMARY_COLOR,
+                    getWidth(), getHeight(), Constants.PRIMARY_DARK
+                );
+                g2.setPaint(gradient);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         btnNewGroup.setFont(new Font("Segoe UI", Font.BOLD, 20));
         btnNewGroup.setForeground(Color.WHITE);
-        btnNewGroup.setBackground(Constants.PRIMARY_COLOR);
+        btnNewGroup.setOpaque(false);
+        btnNewGroup.setContentAreaFilled(false);
         btnNewGroup.setBorder(new EmptyBorder(5, 12, 5, 12));
         btnNewGroup.setFocusPainted(false);
         btnNewGroup.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -314,9 +342,22 @@ sidebarPanel.add(userListScrollPane, BorderLayout.CENTER);
         UserDisplay serverUser = new UserDisplay("Server (Admin)", "Server (Admin)", false, true);
         userListModel.addElement(serverUser);
         
-        // Footer
-        JPanel sidebarFooterPanel = new JPanel(new BorderLayout(10, 0));
-        sidebarFooterPanel.setBackground(new Color(31, 41, 55));
+        // Footer với gradient
+        JPanel sidebarFooterPanel = new JPanel(new BorderLayout(10, 0)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, Constants.SIDEBAR_BG_COLOR,
+                    0, getHeight(), Constants.PRIMARY_LIGHT
+                );
+                g2.setPaint(gradient);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+            }
+        };
+        sidebarFooterPanel.setOpaque(false);
         sidebarFooterPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
         
         JLabel lblCurrentUser = new JLabel(" " + fullName);
@@ -347,10 +388,23 @@ sidebarPanel.add(userListScrollPane, BorderLayout.CENTER);
         JPanel mainPanel = new JPanel(new BorderLayout(0, 0));
         mainPanel.setBackground(Color.WHITE);
         
-        // Header
-        JPanel chatHeaderPanel = new JPanel(new BorderLayout());
-        chatHeaderPanel.setBackground(Color.WHITE);
-        chatHeaderPanel.setBorder(new MatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
+        // Header với gradient
+        JPanel chatHeaderPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, Color.WHITE,
+                    getWidth(), 0, new Color(240, 253, 250)
+                );
+                g2.setPaint(gradient);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+            }
+        };
+        chatHeaderPanel.setOpaque(false);
+        chatHeaderPanel.setBorder(new MatteBorder(0, 0, 1, 0, Constants.PRIMARY_LIGHT));
         chatHeaderPanel.setPreferredSize(new Dimension(0, 55));
         
         lblChattingWith = new JLabel(" Chọn 1 người để chat");
@@ -420,7 +474,7 @@ chatHeaderPanel.add(lblChattingWith, BorderLayout.WEST);
         
         JLabel welcomeTitle = new JLabel("Chào mừng, " + chatState.getMyFullName() + "!");
         welcomeTitle.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        welcomeTitle.setForeground(new Color(31, 41, 55));
+        welcomeTitle.setForeground(Constants.PRIMARY_DARK);
         welcomeTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         JLabel welcomeSubtitle = new JLabel("Chọn một cuộc trò chuyện ở thanh bên trái để bắt đầu");
@@ -439,14 +493,25 @@ chatHeaderPanel.add(lblChattingWith, BorderLayout.WEST);
     }
     
     private JPanel createInputPanel() {
-        JPanel inputPanel = new JPanel(new BorderLayout(12, 0));
-inputPanel.setBackground(Color.WHITE);
+        JPanel inputPanel = new JPanel(new BorderLayout(12, 0)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, Color.WHITE,
+                    getWidth(), 0, new Color(240, 253, 250)
+                );
+                g2.setPaint(gradient);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+            }
+        };
+        inputPanel.setOpaque(false);
         inputPanel.setBorder(BorderFactory.createCompoundBorder(
-            new MatteBorder(1, 0, 0, 0, new Color(229, 231, 235)),
+            new MatteBorder(1, 0, 0, 0, Constants.PRIMARY_LIGHT),
             new EmptyBorder(15, 20, 15, 20)
-        ));
-        
-        JPanel actionButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        ));        JPanel actionButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         actionButtonPanel.setOpaque(false);
         
         btnFile = createActionButton("file.png", "Gửi file");
@@ -461,11 +526,40 @@ inputPanel.setBackground(Color.WHITE);
         
         txtMessageInput = new RoundTextField(0);
         txtMessageInput.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtMessageInput.setBackground(new Color(243, 244, 246));
+        txtMessageInput.setBackground(new Color(240, 253, 250));
+        txtMessageInput.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Constants.PRIMARY_LIGHT, 1),
+            new EmptyBorder(8, 12, 8, 12)
+        ));
         inputPanel.add(txtMessageInput, BorderLayout.CENTER);
         
-        btnSend = new RoundButton(loadIcon("send.png", 20, 20));
-        btnSend.setBackground(Constants.PRIMARY_COLOR);
+        btnSend = new JButton(loadIcon("send.png", 20, 20)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Vẽ shadow
+                g2.setColor(new Color(94, 234, 212, 40));
+                g2.fillOval(2, 2, getWidth()-2, getHeight()-2);
+                
+                // Vẽ gradient xanh ngọc
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, Constants.PRIMARY_COLOR,
+                    getWidth(), getHeight(), Constants.PRIMARY_DARK
+                );
+                g2.setPaint(gradient);
+                g2.fillOval(0, 0, getWidth()-2, getHeight()-2);
+                g2.dispose();
+                
+                super.paintComponent(g);
+            }
+        };
+        btnSend.setOpaque(false);
+        btnSend.setContentAreaFilled(false);
+        btnSend.setBorderPainted(false);
+        btnSend.setFocusPainted(false);
+        btnSend.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnSend.setPreferredSize(new Dimension(44, 44));
         btnSend.setToolTipText("Gửi");
         inputPanel.add(btnSend, BorderLayout.EAST);
@@ -507,6 +601,9 @@ inputPanel.setBackground(Color.WHITE);
                 if (selectedUser != null) {
                     chatState.setCurrentChatTarget(selectedUser.getUsername());
                     chatState.setCurrentChatIsGroup(selectedUser.isGroup());
+                    
+                    // Reset unread count khi mở chat
+                    resetUnreadCount(selectedUser.getUsername());
                     
                     if (!chatPanes.containsKey(chatState.getCurrentChatTarget())) {
                         createNewChatTab(chatState.getCurrentChatTarget(), selectedUser.getFullName());
@@ -822,12 +919,24 @@ int userCount = dis.readInt();
         String fromUser = dis.readUTF();
         String message = dis.readUTF();
         addMessageToPanel(fromUser, message, false, false);
+        
+        // Tăng unread count nếu không đang chat với người này
+        if (!fromUser.equals(chatState.getCurrentChatTarget())) {
+            incrementUnreadCount(fromUser);
+            playNotificationSound();
+        }
     }
     
     private void handleReceiveGroupMessage(DataInputStream dis) throws IOException {
         String groupName = dis.readUTF();
         String message = dis.readUTF();
         addMessageToPanel(groupName, message, false, false);
+        
+        // Tăng unread count nếu không đang chat với nhóm này
+        if (!groupName.equals(chatState.getCurrentChatTarget())) {
+            incrementUnreadCount(groupName);
+            playNotificationSound();
+        }
     }
     
     private void receiveFile(DataInputStream dis) throws IOException {
@@ -851,8 +960,14 @@ int userCount = dis.readInt();
         String chatTarget = dis.readUTF();
         JPanel filePanel = createFilePanel("", file, false);
         addComponentToChat(chatTarget, filePanel);
+        
+        // Tăng unread count nếu không đang chat với người này
+        if (!chatTarget.equals(chatState.getCurrentChatTarget())) {
+            incrementUnreadCount(chatTarget);
+            playNotificationSound();
+        }
     }
-private void receiveVoiceMessage(DataInputStream dis) throws IOException {
+    private void receiveVoiceMessage(DataInputStream dis) throws IOException {
         dis.readUTF(); // fromContext
         String fileName = dis.readUTF();
         long fileSize = dis.readLong();
@@ -873,6 +988,12 @@ private void receiveVoiceMessage(DataInputStream dis) throws IOException {
         String chatTarget = dis.readUTF();
         JPanel voicePanel = createVoiceMessagePanel("Tin nhắn thoại:", file, false);
         addComponentToChat(chatTarget, voicePanel);
+        
+        // Tăng unread count nếu không đang chat với người này
+        if (!chatTarget.equals(chatState.getCurrentChatTarget())) {
+            incrementUnreadCount(chatTarget);
+            playNotificationSound();
+        }
     }
     
     private void receiveLocation(DataInputStream dis) throws IOException {
@@ -886,6 +1007,12 @@ private void receiveVoiceMessage(DataInputStream dis) throws IOException {
         String chatTarget = dis.readUTF();
         JPanel locationPanel = createLocationPanel("Vị trí:", mapLink, time, weather, false);
         addComponentToChat(chatTarget, locationPanel);
+        
+        // Tăng unread count nếu không đang chat với người này
+        if (!chatTarget.equals(chatState.getCurrentChatTarget())) {
+            incrementUnreadCount(chatTarget);
+            playNotificationSound();
+        }
     }
     
     // === UI HELPER METHODS ===
@@ -950,11 +1077,43 @@ if (!chatPanes.containsKey(chatTarget)) {
         });
     }
     
-    private String getFullNameForUser(String username) {
+    private UserDisplay findUserInList(String username) {
         for(int i=0; i < userListModel.size(); i++) {
             if(userListModel.getElementAt(i).getUsername().equals(username)){
-                return userListModel.getElementAt(i).getFullName();
+                return userListModel.getElementAt(i);
             }
+        }
+        return null;
+    }
+    
+    private void incrementUnreadCount(String username) {
+        UserDisplay user = findUserInList(username);
+        if (user != null) {
+            user.incrementUnreadCount();
+            userList.repaint();
+        }
+    }
+    
+    private void resetUnreadCount(String username) {
+        UserDisplay user = findUserInList(username);
+        if (user != null) {
+            user.resetUnreadCount();
+            userList.repaint();
+        }
+    }
+    
+    private void playNotificationSound() {
+        try {
+            Toolkit.getDefaultToolkit().beep();
+        } catch (Exception e) {
+            // Ignore if sound fails
+        }
+    }
+    
+    private String getFullNameForUser(String username) {
+        UserDisplay user = findUserInList(username);
+        if (user != null) {
+            return user.getFullName();
         }
         if (!username.equals("WELCOME")) {
             return "Nhóm: " + username;

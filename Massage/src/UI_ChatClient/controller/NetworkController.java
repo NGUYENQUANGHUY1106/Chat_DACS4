@@ -212,6 +212,9 @@ public class NetworkController {
                         case Constants.TYPE_VIDEO_CALL_DATA:
                             handleReceiveVideoData(dis);
                             break;
+                        case Constants.TYPE_SCREEN_SHARE_DATA:
+                            handleReceiveScreenShareData(dis);
+                            break;
                     }
                 }
                 
@@ -252,6 +255,97 @@ public class NetworkController {
             }
         } catch (IOException e) {
             // Ignore invalid image data
+        }
+    }
+    
+    private void handleReceiveScreenShareData(DataInputStream dis) throws IOException {
+        int dataLength = dis.readInt();
+        byte[] screenData = new byte[dataLength];
+        dis.readFully(screenData, 0, dataLength);
+        
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(screenData);
+            BufferedImage image = ImageIO.read(bais);
+            
+            if (image != null && activeCallWindow != null) {
+                SwingUtilities.invokeLater(() -> {
+                    // Nếu đang share screen, hiển thị toàn màn hình
+                    JPanel videoContainer = activeCallWindow.getVideoPanel();
+                    if (videoContainer != null) {
+                        // Clear container và tạo label mới nếu cần
+                        Component[] components = videoContainer.getComponents();
+                        JLabel screenLabel = null;
+                        
+                        // Tìm hoặc tạo label cho screen share
+                        for (Component comp : components) {
+                            if (comp instanceof JLabel && comp.getName() != null && comp.getName().equals("screenShareLabel")) {
+                                screenLabel = (JLabel) comp;
+                                break;
+                            }
+                        }
+                        
+                        if (screenLabel == null) {
+                            // Clear container và tạo label mới
+                            videoContainer.removeAll();
+                            screenLabel = new JLabel();
+                            screenLabel.setName("screenShareLabel");
+                            screenLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                            screenLabel.setBackground(Color.BLACK);
+                            screenLabel.setOpaque(true);
+                            videoContainer.add(screenLabel, BorderLayout.CENTER);
+                            videoContainer.revalidate();
+                        }
+                        
+                        // Scale và hiển thị image
+                        int width = videoContainer.getWidth();
+                        int height = videoContainer.getHeight();
+                        if (width > 0 && height > 0) {
+                            Image scaledImage = image.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+                            screenLabel.setIcon(new ImageIcon(scaledImage));
+                        }
+                    }
+                });
+            }
+        } catch (IOException e) {
+            System.err.println("Lỗi xử lý screen share data: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Gửi screen share frame qua UDP
+     */
+    public void sendScreenShareFrame(BufferedImage frame) {
+        if (!chatState.isInCall() && !chatState.isInVideoCall()) return;
+        if (frame == null || udpSocket == null) return;
+        
+        try {
+            // Compress image to JPEG
+            ByteArrayOutputStream baosImage = new ByteArrayOutputStream();
+            ImageIO.write(frame, "jpg", baosImage);
+            byte[] imageData = baosImage.toByteArray();
+            
+            // Tạo UDP packet
+            ByteArrayOutputStream baosPacket = new ByteArrayOutputStream();
+            DataOutputStream dataOut = new DataOutputStream(baosPacket);
+            dataOut.writeInt(Constants.TYPE_SCREEN_SHARE_DATA);
+            dataOut.writeInt(imageData.length);
+            dataOut.write(imageData);
+            dataOut.flush();
+            
+            byte[] packetData = baosPacket.toByteArray();
+            
+            // Kiểm tra kích thước packet (UDP max ~65KB)
+            if (packetData.length > 60000) {
+                System.err.println("Warning: Screen share packet too large: " + packetData.length + " bytes");
+                // Có thể giảm chất lượng hoặc resize image ở đây
+                return;
+            }
+            
+            DatagramPacket packet = new DatagramPacket(packetData, packetData.length, serverUdpAddress);
+            udpSocket.send(packet);
+            
+        } catch (IOException e) {
+            System.err.println("Lỗi gửi screen share frame: " + e.getMessage());
         }
     }
     
@@ -425,7 +519,7 @@ public class NetworkController {
         try {
             // Mở cửa sổ đang gọi
             SwingUtilities.invokeLater(() -> {
-                activeCallWindow = new ActiveCallWindow(partnerFullName, false, this::stopCall);
+                activeCallWindow = new ActiveCallWindow(partnerFullName, false, this::stopCall, this);
                 activeCallWindow.setVisible(true);
             });
             
@@ -491,7 +585,7 @@ public class NetworkController {
         try {
             // Mở cửa sổ ActiveCallWindow (Mode Video)
             SwingUtilities.invokeLater(() -> {
-                activeCallWindow = new ActiveCallWindow(partnerFullName, true, this::stopCall);
+                activeCallWindow = new ActiveCallWindow(partnerFullName, true, this::stopCall, this);
                 activeCallWindow.setVisible(true);
                 
                 myVideoPanel = new JPanel();

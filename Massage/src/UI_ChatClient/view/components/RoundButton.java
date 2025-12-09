@@ -29,14 +29,22 @@ public class RoundButton extends JButton {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
+        Color currentColor;
         if (getModel().isArmed()) {
-            g2.setColor(getBackground().darker());
+            currentColor = getBackground().darker();
         } else if (getModel().isRollover() && hoverColor != null) {
-            g2.setColor(hoverColor);
+            currentColor = hoverColor;
         } else {
-            g2.setColor(getBackground());
+            currentColor = getBackground();
         }
-        g2.fillOval(0, 0, getWidth(), getHeight());
+        
+        // Vẽ shadow nhẹ
+        g2.setColor(new Color(0, 0, 0, 20));
+        g2.fillOval(2, 2, getWidth()-2, getHeight()-2);
+        
+        // Vẽ nền chính
+        g2.setColor(currentColor);
+        g2.fillOval(0, 0, getWidth()-2, getHeight()-2);
         g2.dispose();
         
         super.paintComponent(g);

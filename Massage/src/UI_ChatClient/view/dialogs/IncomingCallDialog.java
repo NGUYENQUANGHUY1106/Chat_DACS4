@@ -19,23 +19,23 @@ public class IncomingCallDialog extends JDialog {
         setResizable(true);
         setMinimumSize(new Dimension(300, 400));
         
-        // Panel chính với gradient xanh lá tươi
+        // Panel chính với gradient xanh ngọc nhạt
         JPanel mainPanel = new JPanel(new BorderLayout(0, 0)) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                // Gradient từ xanh đến xanh đậm
+                // Gradient từ trắng sang xanh ngọc nhạt
                 GradientPaint gradient = new GradientPaint(
-                    0, 0, new Color(34, 197, 94),
-                    0, getHeight(), new Color(22, 163, 74)
+                    0, 0, new Color(255, 255, 255),
+                    0, getHeight(), new Color(94, 234, 212)
                 );
                 g2.setPaint(gradient);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 35, 35);
                 
-                // Hiệu ứng sóng nhẹ
-                g2.setColor(new Color(255, 255, 255, 30));
+                // Hiệu ứng sóng nhẹ - vòng tròn xanh ngọc
+                g2.setColor(new Color(94, 234, 212, 60));
                 for (int i = 0; i < 3; i++) {
                     int offset = (waveOffset + i * 20) % 60;
                     g2.drawRoundRect(offset/2, offset/2, getWidth() - offset, getHeight() - offset, 30, 30);
@@ -60,7 +60,7 @@ public class IncomingCallDialog extends JDialog {
         
         JLabel lblCallType = new JLabel(isVideo ? "📹 Incomming video call" : "📞 Incomming call");
         lblCallType.setFont(new Font("Segoe UI Emoji", Font.BOLD, 18));
-        lblCallType.setForeground(new Color(255, 255, 255, 220));
+        lblCallType.setForeground(new Color(19, 78, 74));
         headerPanel.add(lblCallType);
         
         mainPanel.add(headerPanel, BorderLayout.NORTH);
@@ -85,13 +85,13 @@ public class IncomingCallDialog extends JDialog {
         
         JLabel lblName = new JLabel(callerName);
         lblName.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        lblName.setForeground(Color.WHITE);
+        lblName.setForeground(new Color(19, 78, 74));
         lblName.setAlignmentX(Component.CENTER_ALIGNMENT);
         lblName.setBorder(new javax.swing.border.EmptyBorder(15, 0, 5, 0));
         
         JLabel lblStatus = new JLabel("đang gọi cho bạn...");
         lblStatus.setFont(new Font("Segoe UI", Font.ITALIC, 15));
-        lblStatus.setForeground(new Color(220, 255, 220));
+        lblStatus.setForeground(new Color(45, 212, 191));
         lblStatus.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         infoPanel.add(avatarContainer);
@@ -110,7 +110,7 @@ public class IncomingCallDialog extends JDialog {
         declinePanel.setLayout(new BoxLayout(declinePanel, BoxLayout.Y_AXIS));
         declinePanel.setOpaque(false);
         
-        RoundButton btnDecline = new RoundButton(IconUtils.loadAndScaleIcon("hangup.png", 32, 32), new Color(220, 53, 69));
+        RoundButton btnDecline = new RoundButton(IconUtils.loadAndScaleIcon("hangup.png", 32, 32), new Color(239, 68, 68));
         btnDecline.setPreferredSize(new Dimension(65, 65));
         btnDecline.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnDecline.addActionListener(e -> {
@@ -120,7 +120,7 @@ public class IncomingCallDialog extends JDialog {
         
         JLabel lblDecline = new JLabel("Từ chối");
         lblDecline.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblDecline.setForeground(Color.WHITE);
+        lblDecline.setForeground(new Color(19, 78, 74));
         lblDecline.setAlignmentX(Component.CENTER_ALIGNMENT);
         lblDecline.setBorder(new javax.swing.border.EmptyBorder(8, 0, 0, 0));
         
@@ -133,7 +133,7 @@ public class IncomingCallDialog extends JDialog {
         acceptPanel.setOpaque(false);
         
         String acceptIconName = isVideo ? "video.png" : "call.png";
-        RoundButton btnAccept = new RoundButton(IconUtils.loadAndScaleIcon(acceptIconName, 32, 32), Color.WHITE);
+        RoundButton btnAccept = new RoundButton(IconUtils.loadAndScaleIcon(acceptIconName, 32, 32), new Color(20, 184, 166));
         btnAccept.setPreferredSize(new Dimension(65, 65));
         btnAccept.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnAccept.addActionListener(e -> {
@@ -143,7 +143,7 @@ public class IncomingCallDialog extends JDialog {
         
         JLabel lblAccept = new JLabel("Trả lời");
         lblAccept.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblAccept.setForeground(Color.WHITE);
+        lblAccept.setForeground(new Color(19, 78, 74));
         lblAccept.setAlignmentX(Component.CENTER_ALIGNMENT);
         lblAccept.setBorder(new javax.swing.border.EmptyBorder(8, 0, 0, 0));
         

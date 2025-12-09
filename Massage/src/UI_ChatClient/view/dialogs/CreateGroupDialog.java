@@ -25,15 +25,23 @@ public class CreateGroupDialog extends JDialog {
         setUndecorated(true);
         setBackground(new Color(0, 0, 0, 0));
         
-        // Panel chính với bo tròn
+        // Panel chính với bo tròn và gradient
         JPanel mainPanel = new JPanel(new BorderLayout(0, 0)) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(Color.WHITE);
+                
+                // Gradient trắng sang xanh ngọc nhạt
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, new Color(255, 255, 255),
+                    0, getHeight(), new Color(240, 253, 250)
+                );
+                g2.setPaint(gradient);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
-                g2.setColor(new Color(229, 231, 235));
+                
+                g2.setColor(new Color(94, 234, 212, 100));
+                g2.setStroke(new BasicStroke(2));
                 g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 20, 20);
                 g2.dispose();
             }
@@ -56,7 +64,7 @@ public class CreateGroupDialog extends JDialog {
         
         JLabel lblTitle = new JLabel("Tạo nhóm mới");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        lblTitle.setForeground(new Color(31, 41, 55));
+        lblTitle.setForeground(new Color(19, 78, 74));
         
         JLabel lblSubtitle = new JLabel("Thêm thành viên và bắt đầu trò chuyện");
         lblSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -78,10 +86,14 @@ public class CreateGroupDialog extends JDialog {
         groupNamePanel.setOpaque(false);
         JLabel lblGroupName = new JLabel("Tên nhóm");
         lblGroupName.setFont(Constants.UI_FONT_BOLD);
-        lblGroupName.setForeground(new Color(55, 65, 81));
+        lblGroupName.setForeground(new Color(19, 78, 74));
         groupNameField = new RoundTextField(0);
         groupNameField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        groupNameField.setBackground(new Color(249, 250, 251));
+        groupNameField.setBackground(new Color(240, 253, 250));
+        groupNameField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(94, 234, 212), 1),
+            new javax.swing.border.EmptyBorder(8, 12, 8, 12)
+        ));
         groupNamePanel.add(lblGroupName, BorderLayout.NORTH);
         groupNamePanel.add(groupNameField, BorderLayout.CENTER);
         contentPanel.add(groupNamePanel, BorderLayout.NORTH);
@@ -91,17 +103,17 @@ public class CreateGroupDialog extends JDialog {
         membersPanel.setOpaque(false);
         JLabel lblMembers = new JLabel("Chọn thành viên (giữ Ctrl để chọn nhiều)");
         lblMembers.setFont(Constants.UI_FONT_BOLD);
-        lblMembers.setForeground(new Color(55, 65, 81));
+        lblMembers.setForeground(new Color(19, 78, 74));
         
         potentialMembersList = new JList<>(model);
         potentialMembersList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         potentialMembersList.setBackground(new Color(249, 250, 251));
         potentialMembersList.setFixedCellHeight(50);
-        potentialMembersList.setSelectionBackground(new Color(99, 102, 241, 50));
-        potentialMembersList.setSelectionForeground(new Color(31, 41, 55));
+        potentialMembersList.setSelectionBackground(new Color(94, 234, 212, 80));
+        potentialMembersList.setSelectionForeground(new Color(19, 78, 74));
         
         JScrollPane scrollPane = new JScrollPane(potentialMembersList);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(229, 231, 235)));
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(94, 234, 212)));
         scrollPane.setPreferredSize(new Dimension(0, 200));
         
         membersPanel.add(lblMembers, BorderLayout.NORTH);
@@ -117,16 +129,31 @@ public class CreateGroupDialog extends JDialog {
         
         btnCancel = new JButton("Hủy bỏ");
         btnCancel.setFont(Constants.UI_FONT_BOLD);
-        btnCancel.setBackground(new Color(243, 244, 246));
-        btnCancel.setForeground(new Color(55, 65, 81));
+        btnCancel.setBackground(new Color(249, 250, 251));
+        btnCancel.setForeground(new Color(107, 114, 128));
         btnCancel.setFocusPainted(false);
         btnCancel.setBorder(new javax.swing.border.EmptyBorder(12, 24, 12, 24));
         btnCancel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
-        btnCreate = new JButton("Tạo nhóm");
+        btnCreate = new JButton("Tạo nhóm") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, new Color(94, 234, 212),
+                    getWidth(), 0, new Color(45, 212, 191)
+                );
+                g2.setPaint(gradient);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         btnCreate.setFont(Constants.UI_FONT_BOLD);
-        btnCreate.setBackground(new Color(99, 102, 241));
         btnCreate.setForeground(Color.WHITE);
+        btnCreate.setOpaque(false);
+        btnCreate.setContentAreaFilled(false);
         btnCreate.setFocusPainted(false);
         btnCreate.setBorder(new javax.swing.border.EmptyBorder(12, 24, 12, 24));
         btnCreate.setCursor(new Cursor(Cursor.HAND_CURSOR));

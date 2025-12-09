@@ -42,12 +42,20 @@ public class BubblePanel extends JPanel {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
-        // Vẽ shadow nhẹ
-        g2.setColor(new Color(0, 0, 0, 15));
+        // Vẽ shadow nhẹ hơn
+        g2.setColor(new Color(94, 234, 212, 25));
         g2.fill(new RoundRectangle2D.Float(2, 2, getWidth()-2, getHeight()-2, 18, 18));
         
-        // Vẽ nền chính
-        g2.setColor(bgColor);
+        // Vẽ nền chính với gradient cho tin nhắn của mình
+        if (isMyMessage) {
+            GradientPaint gradient = new GradientPaint(
+                0, 0, Constants.MY_MESSAGE_COLOR,
+                getWidth(), 0, Constants.PRIMARY_DARK
+            );
+            g2.setPaint(gradient);
+        } else {
+            g2.setColor(bgColor);
+        }
         g2.fill(new RoundRectangle2D.Float(0, 0, getWidth()-2, getHeight()-2, 18, 18));
         g2.dispose();
         super.paintComponent(g);

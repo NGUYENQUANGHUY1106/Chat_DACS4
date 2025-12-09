@@ -41,6 +41,7 @@ public final class Constants {
     public static final int TYPE_VIDEO_CALL_HANGUP = 29;
     public static final int TYPE_VIDEO_CALL_ENDED = 30;
     public static final int TYPE_VIDEO_CALL_DATA = 31;
+    public static final int TYPE_SCREEN_SHARE_DATA = 32;
     
     // === CẤU HÌNH SERVER ===
     public static final String SERVER_IP = "192.168.195.189";
@@ -48,20 +49,22 @@ public final class Constants {
     public static final int UDP_PORT = 1235;
     public static final int UDP_TYPE_REGISTER_CLIENT = 99;
     
-    // === BẢNG MÀU HIỆN ĐẠI ===
-    public static final Color PRIMARY_COLOR = new Color(99, 102, 241);      // Indigo hiện đại
-    public static final Color SECONDARY_COLOR = new Color(249, 250, 251);   // Xám rất nhạt
-    public static final Color ACCENT_COLOR = new Color(79, 70, 229);        // Indigo đậm hơn
-    public static final Color SIDEBAR_BG_COLOR = new Color(17, 24, 39);     // Xanh đen sang trọng
-    public static final Color SIDEBAR_TEXT_COLOR = new Color(229, 231, 235); // Trắng nhạt
-    public static final Color HOVER_COLOR = new Color(31, 41, 55);          // Hover cho sidebar
-    public static final Color ONLINE_COLOR = new Color(34, 197, 94);        // Xanh lá tươi
-    public static final Color CHAT_BG_COLOR = new Color(243, 244, 246);     // Nền chat nhẹ nhàng
+    // === BẢNG MÀU GRADIENT TRẮNG - XANH NGỌC NHẠT ===
+    public static final Color PRIMARY_COLOR = new Color(94, 234, 212);       // Xanh ngọc chính (Teal-300)
+    public static final Color PRIMARY_DARK = new Color(45, 212, 191);        // Xanh ngọc đậm (Teal-400)
+    public static final Color PRIMARY_LIGHT = new Color(153, 246, 228);      // Xanh ngọc nhạt (Teal-200)
+    public static final Color SECONDARY_COLOR = new Color(255, 255, 255);    // Trắng tinh khôi
+    public static final Color ACCENT_COLOR = new Color(20, 184, 166);        // Xanh ngọc accent (Teal-500)
+    public static final Color SIDEBAR_BG_COLOR = new Color(240, 253, 250);   // Trắng pha xanh ngọc nhạt
+    public static final Color SIDEBAR_TEXT_COLOR = new Color(19, 78, 74);    // Xanh đen
+    public static final Color HOVER_COLOR = new Color(204, 251, 241);        // Xanh ngọc rất nhạt hover (Teal-100)
+    public static final Color ONLINE_COLOR = new Color(16, 185, 129);        // Xanh lá tươi (Emerald-500)
+    public static final Color CHAT_BG_COLOR = new Color(249, 250, 251);      // Nền chat trắng xám nhẹ
     
     // === MÀU TIN NHẮN ===
-    public static final Color MY_MESSAGE_COLOR = new Color(99, 102, 241);       // Indigo cho tin nhắn mình
-    public static final Color OTHER_MESSAGE_COLOR = new Color(255, 255, 255);   // Trắng cho tin người khác
-    public static final Color SYSTEM_MESSAGE_COLOR = new Color(209, 213, 219);  // Xám nhạt cho hệ thống
+    public static final Color MY_MESSAGE_COLOR = new Color(94, 234, 212);        // Xanh ngọc cho tin nhắn mình
+    public static final Color OTHER_MESSAGE_COLOR = new Color(255, 255, 255);    // Trắng cho tin người khác
+    public static final Color SYSTEM_MESSAGE_COLOR = new Color(224, 242, 241);   // Xanh ngọc rất nhạt cho hệ thống
     
     // === FONT CHỮ ===
     public static final Font UI_FONT = new Font("Segoe UI", Font.PLAIN, 14);

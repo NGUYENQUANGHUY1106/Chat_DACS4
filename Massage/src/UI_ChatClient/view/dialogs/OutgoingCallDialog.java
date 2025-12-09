@@ -20,23 +20,23 @@ public class OutgoingCallDialog extends JDialog {
         setResizable(true);
         setMinimumSize(new Dimension(300, 400));
         
-        // Panel chính với gradient background
+        // Panel chính với gradient trắng xanh ngọc
         JPanel mainPanel = new JPanel(new BorderLayout(0, 0)) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                // Gradient từ tím đậm sang xanh indigo
+                // Gradient từ trắng sang xanh ngọc
                 GradientPaint gradient = new GradientPaint(
-                    0, 0, new Color(99, 102, 241),
-                    0, getHeight(), new Color(79, 70, 229)
+                    0, 0, new Color(255, 255, 255),
+                    0, getHeight(), new Color(94, 234, 212)
                 );
                 g2.setPaint(gradient);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 35, 35);
                 
                 // Hiệu ứng pulse xung quanh
-                g2.setColor(new Color(255, 255, 255, pulseAlpha));
+                g2.setColor(new Color(45, 212, 191, pulseAlpha));
                 g2.setStroke(new BasicStroke(3));
                 g2.drawRoundRect(5, 5, getWidth()-10, getHeight()-10, 30, 30);
                 
@@ -73,10 +73,10 @@ public class OutgoingCallDialog extends JDialog {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                // Vòng tròn phát sáng
+                // Vòng tròn phát sáng xanh ngọc
                 int centerX = getWidth() / 2;
                 int centerY = getHeight() / 2;
-                g2.setColor(new Color(255, 255, 255, pulseAlpha / 2));
+                g2.setColor(new Color(94, 234, 212, pulseAlpha / 2));
                 g2.fillOval(centerX - 55, centerY - 55, 110, 110);
                 
                 g2.dispose();
@@ -94,13 +94,13 @@ public class OutgoingCallDialog extends JDialog {
         
         JLabel lblName = new JLabel(calleeName);
         lblName.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        lblName.setForeground(Color.WHITE);
+        lblName.setForeground(new Color(19, 78, 74));
         lblName.setAlignmentX(Component.CENTER_ALIGNMENT);
         lblName.setBorder(new javax.swing.border.EmptyBorder(20, 0, 8, 0));
         
         JLabel lblStatus = new JLabel("Đang đổ chuông...");
         lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        lblStatus.setForeground(new Color(200, 200, 255));
+        lblStatus.setForeground(new Color(45, 212, 191));
         lblStatus.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         // Icon loại cuộc gọi

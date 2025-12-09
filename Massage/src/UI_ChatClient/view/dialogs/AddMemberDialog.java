@@ -22,15 +22,22 @@ public class AddMemberDialog extends JDialog {
         setUndecorated(true);
         setBackground(new Color(0, 0, 0, 0));
         
-        // Panel chính với bo tròn
+        // Panel chính với bo tròn và gradient
         JPanel mainPanel = new JPanel(new BorderLayout(0, 0)) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(Color.WHITE);
+                
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, new Color(255, 255, 255),
+                    0, getHeight(), new Color(240, 253, 250)
+                );
+                g2.setPaint(gradient);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
-                g2.setColor(new Color(229, 231, 235));
+                
+                g2.setColor(new Color(94, 234, 212, 100));
+                g2.setStroke(new BasicStroke(2));
                 g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 20, 20);
                 g2.dispose();
             }
@@ -53,7 +60,7 @@ public class AddMemberDialog extends JDialog {
         
         JLabel lblTitle = new JLabel("Thêm thành viên");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        lblTitle.setForeground(new Color(31, 41, 55));
+        lblTitle.setForeground(new Color(19, 78, 74));
         
         JLabel lblSubtitle = new JLabel("Vào nhóm: " + groupName);
         lblSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -72,17 +79,17 @@ public class AddMemberDialog extends JDialog {
         
         JLabel lblSelect = new JLabel("Chọn người dùng (giữ Ctrl để chọn nhiều)");
         lblSelect.setFont(Constants.UI_FONT);
-        lblSelect.setForeground(new Color(55, 65, 81));
+        lblSelect.setForeground(new Color(19, 78, 74));
         
         potentialMembersList = new JList<>(model);
         potentialMembersList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         potentialMembersList.setBackground(new Color(249, 250, 251));
         potentialMembersList.setFixedCellHeight(50);
-        potentialMembersList.setSelectionBackground(new Color(34, 197, 94, 50));
-        potentialMembersList.setSelectionForeground(new Color(31, 41, 55));
+        potentialMembersList.setSelectionBackground(new Color(94, 234, 212, 80));
+        potentialMembersList.setSelectionForeground(new Color(19, 78, 74));
         
         JScrollPane scrollPane = new JScrollPane(potentialMembersList);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(229, 231, 235)));
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(94, 234, 212)));
         
         listPanel.add(lblSelect, BorderLayout.NORTH);
         listPanel.add(scrollPane, BorderLayout.CENTER);
@@ -95,16 +102,31 @@ public class AddMemberDialog extends JDialog {
         
         btnCancel = new JButton("Hủy bỏ");
         btnCancel.setFont(Constants.UI_FONT_BOLD);
-        btnCancel.setBackground(new Color(243, 244, 246));
-        btnCancel.setForeground(new Color(55, 65, 81));
+        btnCancel.setBackground(new Color(249, 250, 251));
+        btnCancel.setForeground(new Color(107, 114, 128));
         btnCancel.setFocusPainted(false);
         btnCancel.setBorder(new javax.swing.border.EmptyBorder(12, 24, 12, 24));
         btnCancel.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        btnAdd = new JButton("Thêm thành viên");
+        btnAdd = new JButton("Thêm thành viên") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, new Color(94, 234, 212),
+                    getWidth(), 0, new Color(45, 212, 191)
+                );
+                g2.setPaint(gradient);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         btnAdd.setFont(Constants.UI_FONT_BOLD);
-        btnAdd.setBackground(new Color(34, 197, 94));
         btnAdd.setForeground(Color.WHITE);
+        btnAdd.setOpaque(false);
+        btnAdd.setContentAreaFilled(false);
         btnAdd.setFocusPainted(false);
         btnAdd.setBorder(new javax.swing.border.EmptyBorder(12, 24, 12, 24));
         btnAdd.setCursor(new Cursor(Cursor.HAND_CURSOR));

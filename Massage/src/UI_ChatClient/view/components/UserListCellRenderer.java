@@ -14,6 +14,7 @@ public class UserListCellRenderer extends JPanel implements ListCellRenderer<Use
     private JLabel lblName;
     private JLabel lblStatus;
     private StatusIconPanel statusIcon;
+    private JLabel lblUnreadBadge;
     
     public UserListCellRenderer() {
         setLayout(new BorderLayout(12, 0));
@@ -28,6 +29,31 @@ public class UserListCellRenderer extends JPanel implements ListCellRenderer<Use
         
         statusIcon = new StatusIconPanel();
         
+        // Badge hiển thị số tin nhắn chưa đọc với bo viền tròn
+        lblUnreadBadge = new JLabel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                if (isVisible()) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    
+                    // Vẽ nền badge bo tròn
+                    g2.setColor(getBackground());
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                    
+                    g2.dispose();
+                }
+                super.paintComponent(g);
+            }
+        };
+        lblUnreadBadge.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        lblUnreadBadge.setForeground(Color.WHITE);
+        lblUnreadBadge.setOpaque(false); // Đặt opaque false để vẽ custom background
+        lblUnreadBadge.setBackground(new Color(239, 68, 68)); // Màu đỏ
+        lblUnreadBadge.setHorizontalAlignment(SwingConstants.CENTER);
+        lblUnreadBadge.setBorder(new javax.swing.border.EmptyBorder(3, 7, 3, 7));
+        lblUnreadBadge.setVisible(false);
+        
         // Panel chứa tên và trạng thái
         JPanel infoPanel = new JPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
@@ -36,9 +62,10 @@ public class UserListCellRenderer extends JPanel implements ListCellRenderer<Use
         infoPanel.add(Box.createRigidArea(new Dimension(0, 2)));
         infoPanel.add(lblStatus);
         
-        // Panel bên phải chứa status icon
-        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        // Panel bên phải chứa status icon và badge
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         rightPanel.setOpaque(false);
+        rightPanel.add(lblUnreadBadge);
         rightPanel.add(statusIcon);
         
         add(lblIcon, BorderLayout.WEST);
@@ -67,9 +94,17 @@ public class UserListCellRenderer extends JPanel implements ListCellRenderer<Use
         }
         statusIcon.setOnline(!user.isGroup() && user.isOnline());
         
+        // Hiển thị badge số tin nhắn chưa đọc
+        if (user.getUnreadCount() > 0) {
+            lblUnreadBadge.setText(String.valueOf(user.getUnreadCount()));
+            lblUnreadBadge.setVisible(true);
+        } else {
+            lblUnreadBadge.setVisible(false);
+        }
+        
         if (isSelected) {
             setBackground(Constants.HOVER_COLOR);
-            lblName.setForeground(Color.WHITE);
+            lblName.setForeground(Constants.PRIMARY_DARK);
         } else {
             setBackground(Constants.SIDEBAR_BG_COLOR);
             lblName.setForeground(Constants.SIDEBAR_TEXT_COLOR);

@@ -263,46 +263,69 @@ public class NetworkController {
         byte[] screenData = new byte[dataLength];
         dis.readFully(screenData, 0, dataLength);
         
+        // Log chỉ mỗi 30 frames
+        if (System.currentTimeMillis() % 2000 < 70) {
+            System.out.println("Nhận screen share data: " + dataLength + " bytes");
+        }
+        
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(screenData);
             BufferedImage image = ImageIO.read(bais);
             
             if (image != null && activeCallWindow != null) {
                 SwingUtilities.invokeLater(() -> {
-                    // Nếu đang share screen, hiển thị toàn màn hình
                     JPanel videoContainer = activeCallWindow.getVideoPanel();
-                    if (videoContainer != null) {
-                        // Clear container và tạo label mới nếu cần
-                        Component[] components = videoContainer.getComponents();
-                        JLabel screenLabel = null;
+                    if (videoContainer == null) return;
+                    
+                    // Tìm hoặc tạo label cho screen share
+                    Component[] components = videoContainer.getComponents();
+                    JLabel screenLabel = null;
+                    
+                    for (Component comp : components) {
+                        if (comp instanceof JLabel && "screenShareLabel".equals(comp.getName())) {
+                            screenLabel = (JLabel) comp;
+                            break;
+                        }
+                    }
+                    
+                    if (screenLabel == null) {
+                        // Clear container và tạo label mới
+                        videoContainer.removeAll();
+                        screenLabel = new JLabel("Đang nhận màn hình...");
+                        screenLabel.setName("screenShareLabel");
+                        screenLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                        screenLabel.setVerticalAlignment(SwingConstants.CENTER);
+                        screenLabel.setBackground(Color.BLACK);
+                        screenLabel.setForeground(Color.WHITE);
+                        screenLabel.setOpaque(true);
+                        videoContainer.setLayout(new BorderLayout());
+                        videoContainer.add(screenLabel, BorderLayout.CENTER);
+                        videoContainer.revalidate();
+                        videoContainer.repaint();
+                        System.out.println("Đã tạo screenShareLabel mới");
+                    }
+                    
+                    // Scale và hiển thị image
+                    int width = videoContainer.getWidth();
+                    int height = videoContainer.getHeight();
+                    
+                    if (width > 10 && height > 10) {
+                        // Tính toán tỷ lệ để giữ aspect ratio
+                        double imgRatio = (double) image.getWidth() / image.getHeight();
+                        double containerRatio = (double) width / height;
                         
-                        // Tìm hoặc tạo label cho screen share
-                        for (Component comp : components) {
-                            if (comp instanceof JLabel && comp.getName() != null && comp.getName().equals("screenShareLabel")) {
-                                screenLabel = (JLabel) comp;
-                                break;
-                            }
+                        int scaledWidth, scaledHeight;
+                        if (imgRatio > containerRatio) {
+                            scaledWidth = width;
+                            scaledHeight = (int) (width / imgRatio);
+                        } else {
+                            scaledHeight = height;
+                            scaledWidth = (int) (height * imgRatio);
                         }
                         
-                        if (screenLabel == null) {
-                            // Clear container và tạo label mới
-                            videoContainer.removeAll();
-                            screenLabel = new JLabel();
-                            screenLabel.setName("screenShareLabel");
-                            screenLabel.setHorizontalAlignment(SwingConstants.CENTER);
-                            screenLabel.setBackground(Color.BLACK);
-                            screenLabel.setOpaque(true);
-                            videoContainer.add(screenLabel, BorderLayout.CENTER);
-                            videoContainer.revalidate();
-                        }
-                        
-                        // Scale và hiển thị image
-                        int width = videoContainer.getWidth();
-                        int height = videoContainer.getHeight();
-                        if (width > 0 && height > 0) {
-                            Image scaledImage = image.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-                            screenLabel.setIcon(new ImageIcon(scaledImage));
-                        }
+                        Image scaledImage = image.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_FAST);
+                        screenLabel.setIcon(new ImageIcon(scaledImage));
+                        screenLabel.setText(null);
                     }
                 });
             }
@@ -319,9 +342,27 @@ public class NetworkController {
         if (frame == null || udpSocket == null) return;
         
         try {
-            // Compress image to JPEG
+            // Resize image để giảm kích thước packet
+            int maxWidth = 800;
+            int maxHeight = 600;
+            
+            BufferedImage resizedFrame = frame;
+            if (frame.getWidth() > maxWidth || frame.getHeight() > maxHeight) {
+                double ratio = Math.min((double) maxWidth / frame.getWidth(), 
+                                       (double) maxHeight / frame.getHeight());
+                int newWidth = (int) (frame.getWidth() * ratio);
+                int newHeight = (int) (frame.getHeight() * ratio);
+                
+                resizedFrame = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+                Graphics2D g2d = resizedFrame.createGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2d.drawImage(frame, 0, 0, newWidth, newHeight, null);
+                g2d.dispose();
+            }
+            
+            // Compress image to JPEG với chất lượng thấp hơn
             ByteArrayOutputStream baosImage = new ByteArrayOutputStream();
-            ImageIO.write(frame, "jpg", baosImage);
+            ImageIO.write(resizedFrame, "jpg", baosImage);
             byte[] imageData = baosImage.toByteArray();
             
             // Tạo UDP packet
@@ -337,12 +378,16 @@ public class NetworkController {
             // Kiểm tra kích thước packet (UDP max ~65KB)
             if (packetData.length > 60000) {
                 System.err.println("Warning: Screen share packet too large: " + packetData.length + " bytes");
-                // Có thể giảm chất lượng hoặc resize image ở đây
                 return;
             }
             
             DatagramPacket packet = new DatagramPacket(packetData, packetData.length, serverUdpAddress);
             udpSocket.send(packet);
+            
+            // Log chỉ mỗi 30 frames (2 giây)
+            if (System.currentTimeMillis() % 2000 < 70) {
+                System.out.println("Đã gửi screen share frame: " + packetData.length + " bytes");
+            }
             
         } catch (IOException e) {
             System.err.println("Lỗi gửi screen share frame: " + e.getMessage());

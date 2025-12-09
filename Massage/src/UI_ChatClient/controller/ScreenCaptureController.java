@@ -19,7 +19,7 @@ public class ScreenCaptureController {
     private ScreenCaptureListener listener;
     
     // FPS cho screen capture (mặc định 15 fps)
-    private static final int CAPTURE_FPS = 15;
+    private static final int CAPTURE_FPS = 60;
     private static final int CAPTURE_DELAY = 1000 / CAPTURE_FPS;
     
     public interface ScreenCaptureListener {

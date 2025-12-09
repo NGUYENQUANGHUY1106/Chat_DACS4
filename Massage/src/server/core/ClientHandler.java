@@ -494,9 +494,12 @@ public class ClientHandler implements Runnable {
             if (groupListModel != null) {
                 groupListModel.addElement(groupFullName);
             }
+            // nếu admin đang chọn đúng nhóm này thì cập nhật luôn panel thành viên
+            
         });
 
         broadcastUserListUpdate();
+
     }
 
     private void handleAddMembersToGroup() throws IOException {

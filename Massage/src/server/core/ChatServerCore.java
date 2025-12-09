@@ -68,8 +68,7 @@ public class ChatServerCore {
     public static final int TYPE_JOIN_CALL_REQUEST = 33;
     public static final int TYPE_CALL_STATUS_UPDATE = 34;
     public static final int TYPE_CALL_JOINED_SUCCESS = 35;
-
-    // ======================================================
+// ======================================================
     // UDP
     // ======================================================
     public static final int TCP_PORT = 1234;
@@ -136,7 +135,7 @@ public class ChatServerCore {
         userManagementPanel = userPanel;
         fileManagementPanel = filePanel;
         groupListModel = groupModel;
-        groupList = groupListComp;
+groupList = groupListComp;
         memberListModel = memberModel;
         memberList = memberListComp;
         chatClientListModel = chatClientModel;
@@ -210,7 +209,7 @@ public class ChatServerCore {
             List<GroupInfo> filteredGroups = new ArrayList<>();
             for (GroupInfo group : groups.values()) {
                 if (group.members.contains(handler.clientId)) {
-                    filteredGroups.add(group);
+filteredGroups.add(group);
                 }
             }
             handler.sendUserListUpdate(clients, filteredGroups);
@@ -286,7 +285,7 @@ public class ChatServerCore {
     // ======================================================
     public static GroupInfo findGroupByName(String fullName) {
         if (fullName == null) return null;
-        for (GroupInfo group : groups.values()) {
+for (GroupInfo group : groups.values()) {
             if (fullName.equals(group.groupFullName)) {
                 return group;
             }

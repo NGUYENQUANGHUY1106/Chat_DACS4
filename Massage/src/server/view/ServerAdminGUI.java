@@ -110,7 +110,7 @@ public class ServerAdminGUI extends JFrame {
         sidebarButtons = new JButton[5];
         btnDashboard = new JButton("Dashboard");
         btnDashboard.setIcon(loadAndScaleIcon("dashboard.png", 30, 30));
-        
+
         sidebarButtons[0] = btnDashboard;
         styleSidebarButton(btnDashboard);
 
@@ -134,7 +134,6 @@ public class ServerAdminGUI extends JFrame {
         sidebarButtons[4] = btnFiles;
         styleSidebarButton(btnFiles);
 
-
         sidebarPanel.add(btnDashboard);
         sidebarPanel.add(btnUsers);
         sidebarPanel.add(btnMessages);
@@ -142,7 +141,6 @@ public class ServerAdminGUI extends JFrame {
         sidebarPanel.add(btnFiles);
 
         sidebarPanel.add(Box.createVerticalGlue());
-
 
         setActiveSidebarButton(btnDashboard);
         contentPane.add(sidebarPanel, BorderLayout.WEST);
@@ -301,11 +299,20 @@ public class ServerAdminGUI extends JFrame {
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        // ===== NÚT XÓA THÀNH VIÊN =====
         JButton btnRemoveMember = new JButton("Xóa Thành Viên");
         btnRemoveMember.setForeground(Color.RED.darker());
         btnRemoveMember.setFont(new Font("Segoe UI", Font.BOLD, 12));
         gbc.gridy++;
         roomActionPanel.add(btnRemoveMember, gbc);
+
+        // ===== NÚT XÓA NHÓM =====
+        JButton btnDeleteGroup = new JButton("Xóa Nhóm");
+        btnDeleteGroup.setForeground(Color.RED.darker());
+        btnDeleteGroup.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        gbc.gridy++;
+        roomActionPanel.add(btnDeleteGroup, gbc);
+        // ==========================
 
         gbc.gridy++;
         gbc.weighty = 1.0;
@@ -334,7 +341,7 @@ public class ServerAdminGUI extends JFrame {
             }
         });
 
-        // Xóa thành viên khỏi nhóm
+        // XÓA THÀNH VIÊN KHỎI NHÓM
         btnRemoveMember.addActionListener(e -> {
             String selectedGroupFullName = groupList.getSelectedValue();
             UserDisplay selectedMember = memberList.getSelectedValue();
@@ -391,6 +398,61 @@ public class ServerAdminGUI extends JFrame {
             }
         });
 
+        // XÓA CẢ NHÓM
+        btnDeleteGroup.addActionListener(e -> {
+            String selectedGroupFullName = groupList.getSelectedValue();
+
+            if (selectedGroupFullName == null) {
+                JOptionPane.showMessageDialog(roomPanel,
+                        "Vui lòng chọn một nhóm để xóa.",
+                        "Lỗi", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            GroupInfo group = findGroupByName(selectedGroupFullName);
+            if (group == null) {
+                JOptionPane.showMessageDialog(roomPanel,
+                        "Lỗi: Không tìm thấy thông tin nhóm.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            int choice = JOptionPane.showConfirmDialog(
+                    roomPanel,
+                    "Bạn có chắc chắn muốn xóa nhóm '" + group.groupFullName + "' không?\n"
+                            + "Tất cả thành viên sẽ không còn thấy nhóm này nữa.",
+                    "Xác nhận xóa nhóm",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            if (choice != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            // Thông báo cho các thành viên trong nhóm
+            String notification = "Hệ thống: Nhóm '" + group.groupFullName + "' đã bị admin xóa.";
+            for (String memberId : group.members) {
+                ClientHandler handler = clients.get(memberId);
+                if (handler != null) {
+                    handler.sendSystemMessage(notification);
+                }
+            }
+
+            // Ghi log
+            addSystemLog("ADMIN: Đã xóa nhóm " + group.groupName);
+
+            // Xóa khỏi map groups (trong ChatServerCore)
+            groups.remove(group.groupName);
+
+            // Xóa khỏi list hiển thị trên GUI
+            groupListModel.removeElement(selectedGroupFullName);
+            memberListModel.clear();
+
+            // Cập nhật lại danh sách cho client
+            broadcastUserListUpdate();
+        });
+
         // ==================== CÁC PANEL KHÁC ====================
         JPanel reportPanel = createPlaceholderPanel("▪ Báo cáo", "Xem báo cáo hệ thống");
         JPanel settingPanel = createPlaceholderPanel("⚙️ Cấu hình", "Cấu hình hệ thống");
@@ -426,7 +488,6 @@ public class ServerAdminGUI extends JFrame {
             cardLayout.show(mainContentPanel, "FILES");
             setActiveSidebarButton(btnFiles);
         });
-
 
         // ======= Gán tham chiếu GUI sang ChatServerCore & Start server =======
         initGUIReferences(

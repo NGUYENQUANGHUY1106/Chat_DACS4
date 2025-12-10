@@ -42,6 +42,9 @@ public final class Constants {
     public static final int TYPE_VIDEO_CALL_ENDED = 30;
     public static final int TYPE_VIDEO_CALL_DATA = 31;
     public static final int TYPE_SCREEN_SHARE_DATA = 36;
+    public static final int TYPE_LEAVE_GROUP_REQUEST = 37;
+    public static final int TYPE_GET_GROUP_MEMBERS_REQUEST = 38;
+    public static final int TYPE_GROUP_MEMBERS_RESPONSE = 39;
     
     // === CẤU HÌNH SERVER ===
     public static final String SERVER_IP = "192.168.195.189";

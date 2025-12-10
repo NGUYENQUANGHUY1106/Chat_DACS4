@@ -177,6 +177,10 @@ public class NetworkController {
                 messageHandler.onCallEnded(fromUser, true);
                 break;
             }
+            case Constants.TYPE_GROUP_MEMBERS_RESPONSE: {
+                handleGroupMembersResponse();
+                break;
+            }
         }
     }
     
@@ -484,6 +488,45 @@ public class NetworkController {
                 dos.writeUTF(member);
             }
             dos.flush();
+        }
+    }
+    
+    public void sendLeaveGroupRequest(String groupName) throws IOException {
+        synchronized (dos) {
+            dos.writeInt(Constants.TYPE_LEAVE_GROUP_REQUEST);
+            dos.writeUTF(groupName);
+            dos.flush();
+        }
+    }
+    
+    public void sendGetGroupMembersRequest(String groupName, GroupMembersCallback callback) throws IOException {
+        this.currentGroupMembersCallback = callback;
+        synchronized (dos) {
+            dos.writeInt(Constants.TYPE_GET_GROUP_MEMBERS_REQUEST);
+            dos.writeUTF(groupName);
+            dos.flush();
+        }
+    }
+    
+    // === CALLBACK FOR GROUP MEMBERS ===
+    
+    public interface GroupMembersCallback {
+        void onMembersReceived(String groupName, String[] members);
+    }
+    
+    private GroupMembersCallback currentGroupMembersCallback;
+    
+    private void handleGroupMembersResponse() throws IOException {
+        String groupName = dis.readUTF();
+        int count = dis.readInt();
+        String[] members = new String[count];
+        for (int i = 0; i < count; i++) {
+            members[i] = dis.readUTF();
+        }
+        
+        if (currentGroupMembersCallback != null) {
+            currentGroupMembersCallback.onMembersReceived(groupName, members);
+            currentGroupMembersCallback = null;
         }
     }
     

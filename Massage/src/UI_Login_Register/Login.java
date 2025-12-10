@@ -1,18 +1,13 @@
 package UI_Login_Register;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import javax.swing.*;
 import javax.swing.border.*;
-
-// Import database
 import database.DBConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-
-// Import Client.java từ package UI_ChatClient
 import UI_ChatClient.Client; 
 
 public class Login extends JFrame {

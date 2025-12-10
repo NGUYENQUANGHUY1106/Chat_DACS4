@@ -45,7 +45,7 @@ public class Client extends JFrame {
     private DefaultListModel<UserDisplay> userListModel;
 
     private JButton btnFile, btnMic, btnLocation, btnSend;
-    private JButton btnUser, btnCall, btnVideo;
+    private JButton btnUser, btnCall, btnVideo, btnCaution;
     private JLabel lblChattingWith;
 
     private JPanel chatWindowsPanel;
@@ -433,7 +433,7 @@ public class Client extends JFrame {
 
         btnCall = createHeaderButton("call.png", "Bắt đầu cuộc gọi");
         btnVideo = createHeaderButton("video.png", "Bắt đầu video call");
-        JButton btnCaution = createHeaderButton("caution.png", "Thông tin");
+        btnCaution = createHeaderButton("caution.png", "Tùy chọn nhóm");
         btnUser = createHeaderButton("user.png", "Tạo nhóm mới");
 
         chatHeaderIconsPanel.add(btnCall);
@@ -747,6 +747,18 @@ public class Client extends JFrame {
                     addSystemMessage_Safe(chatState.getCurrentChatTarget(), message);
                 }
             });
+        });
+        
+        // Group options button (caution)
+        btnCaution.addActionListener(e -> {
+            if (chatState.isCurrentChatIsGroup() && chatState.getCurrentChatTarget() != null) {
+                UserDisplay selectedGroup = userList.getSelectedValue();
+                if (selectedGroup != null && selectedGroup.isGroup()) {
+                    showGroupOptionsDialog(selectedGroup.getFullName());
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn một nhóm để xem tùy chọn.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            }
         });
     }
 
@@ -1702,6 +1714,115 @@ public class Client extends JFrame {
                 e.printStackTrace();
                 addSystemMessage_Safe("WELCOME", "Lỗi khi gửi yêu cầu thêm thành viên: " + e.getMessage());
             }
+        }
+    }
+
+    /**
+     * Hiển thị menu tùy chọn cho nhóm
+     */
+    private void showGroupOptionsDialog(String groupName) {
+        GroupOptionsDialog dialog = new GroupOptionsDialog(this, groupName);
+        dialog.setVisible(true);
+        
+        int option = dialog.getSelectedOption();
+        if (option == 0) {
+            // Xem thành viên nhóm
+            showViewGroupMembers(groupName);
+        } else if (option == 1) {
+            // Rời nhóm
+            showLeaveGroupConfirmation(groupName);
+        }
+    }
+    
+    /**
+     * Hiển thị danh sách thành viên trong nhóm
+     */
+    private void showViewGroupMembers(String groupName) {
+        // Hiển thị loading message
+        addSystemMessage_Safe(groupName, "Đang tải danh sách thành viên...");
+        
+        try {
+            // Gửi request lấy danh sách thành viên từ server
+            networkController.sendGetGroupMembersRequest(groupName, new NetworkController.GroupMembersCallback() {
+                @Override
+                public void onMembersReceived(String receivedGroupName, String[] members) {
+                    SwingUtilities.invokeLater(() -> {
+                        if (members == null || members.length == 0) {
+                            JOptionPane.showMessageDialog(Client.this, 
+                                "Không thể lấy danh sách thành viên của nhóm.", 
+                                "Lỗi", 
+                                JOptionPane.WARNING_MESSAGE);
+                            return;
+                        }
+                        
+                        ViewGroupMembersDialog dialog = new ViewGroupMembersDialog(Client.this, receivedGroupName, members);
+                        dialog.setVisible(true);
+                    });
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                "Lỗi khi yêu cầu danh sách thành viên: " + e.getMessage(),
+                "Lỗi",
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    /**
+     * Hiển thị xác nhận rời nhóm
+     */
+    private void showLeaveGroupConfirmation(String groupName) {
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "Bạn có chắc chắn muốn rời khỏi nhóm \"" + groupName + "\"?\n" +
+            "Bạn sẽ không thể nhận tin nhắn từ nhóm này nữa.",
+            "Xác nhận rời nhóm",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE);
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            leaveGroup(groupName);
+        }
+    }
+    
+    /**
+     * Thực hiện rời nhóm
+     */
+    private void leaveGroup(String groupName) {
+        try {
+            // Gửi request rời nhóm tới server
+            networkController.sendLeaveGroupRequest(groupName);
+            
+            // Xóa chat tab của nhóm
+            chatPanes.remove(groupName);
+            chatScrollPanes.remove(groupName);
+            
+            // Xóa nhóm khỏi danh sách user
+            for (int i = 0; i < userListModel.getSize(); i++) {
+                UserDisplay user = userListModel.getElementAt(i);
+                if (user.getUsername().equals(groupName)) {
+                    userListModel.remove(i);
+                    break;
+                }
+            }
+            
+            // Chuyển về welcome panel
+            cardLayout.show(chatWindowsPanel, "WELCOME_PANEL");
+            lblChattingWith.setText(" Chọn 1 người để chat");
+            chatState.setCurrentChatTarget(null);
+            chatState.setCurrentChatIsGroup(false);
+            
+            JOptionPane.showMessageDialog(this,
+                "Bạn đã rời khỏi nhóm \"" + groupName + "\" thành công.",
+                "Thông báo",
+                JOptionPane.INFORMATION_MESSAGE);
+                
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                "Lỗi khi rời nhóm: " + e.getMessage(),
+                "Lỗi",
+                JOptionPane.ERROR_MESSAGE);
         }
     }
 

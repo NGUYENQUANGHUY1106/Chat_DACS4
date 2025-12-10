@@ -69,6 +69,9 @@ public class ChatServerCore {
     public static final int TYPE_CALL_STATUS_UPDATE = 34;
     public static final int TYPE_CALL_JOINED_SUCCESS = 35;
     public static final int TYPE_SCREEN_SHARE_DATA = 36; // UDP
+    public static final int TYPE_LEAVE_GROUP_REQUEST = 37;
+    public static final int TYPE_GET_GROUP_MEMBERS_REQUEST = 38;
+    public static final int TYPE_GROUP_MEMBERS_RESPONSE = 39;
 // ======================================================
     // UDP
     // ======================================================

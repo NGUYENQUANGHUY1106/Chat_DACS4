@@ -19,6 +19,7 @@ import java.net.SocketAddress;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -160,6 +161,13 @@ public class ClientHandler implements Runnable {
                         break;
                     case TYPE_JOIN_CALL_REQUEST:
                         handleJoinCallRequest();
+                        break;
+                    
+                    case TYPE_LEAVE_GROUP_REQUEST:
+                        handleLeaveGroupRequest();
+                        break;
+                    case TYPE_GET_GROUP_MEMBERS_REQUEST:
+                        handleGetGroupMembersRequest();
                         break;
 
                     default:
@@ -547,6 +555,104 @@ public class ClientHandler implements Runnable {
 
         addSystemLog(this.fullName + " đã thêm " + newMembers.size() + " thành viên vào nhóm " + group.groupName);
         broadcastUserListUpdate();
+    }
+
+    /**
+     * Xử lý yêu cầu rời nhóm
+     */
+    private void handleLeaveGroupRequest() throws IOException {
+        String groupName = dis.readUTF();
+        
+        GroupInfo group = groups.get(groupName);
+        if (group == null) {
+            sendSystemMessage("Lỗi: Không tìm thấy nhóm '" + groupName + "'.");
+            return;
+        }
+        
+        // Xóa user khỏi nhóm
+        boolean removed = group.members.remove(this.clientId);
+        
+        if (!removed) {
+            sendSystemMessage("Lỗi: Bạn không phải thành viên của nhóm này.");
+            return;
+        }
+        
+        // Thông báo cho người rời nhóm
+        sendSystemMessage("Bạn đã rời khỏi nhóm '" + group.groupFullName + "'.");
+        
+        // Thông báo cho các thành viên còn lại
+        String leaveMsg = "Hệ thống: " + this.fullName + " đã rời khỏi nhóm.";
+        for (String memberId : group.members) {
+            ClientHandler handler = clients.get(memberId);
+            if (handler != null) {
+                handler.sendSystemMessage(leaveMsg);
+            }
+        }
+        
+        // Nếu nhóm không còn thành viên nào, xóa nhóm
+        if (group.members.isEmpty()) {
+            groups.remove(groupName);
+            addSystemLog("Nhóm " + group.groupFullName + " đã bị xóa do không còn thành viên.");
+        }
+        
+        addSystemLog(this.fullName + " đã rời khỏi nhóm " + group.groupFullName);
+        broadcastUserListUpdate();
+    }
+    
+    /**
+     * Xử lý yêu cầu lấy danh sách thành viên nhóm
+     */
+    private void handleGetGroupMembersRequest() throws IOException {
+        String groupName = dis.readUTF();
+        
+        GroupInfo group = groups.get(groupName);
+        if (group == null) {
+            // Gửi response rỗng
+            synchronized (dos) {
+                dos.writeInt(TYPE_GROUP_MEMBERS_RESPONSE);
+                dos.writeUTF(groupName);
+                dos.writeInt(0); // Không có thành viên
+                dos.flush();
+            }
+            return;
+        }
+        
+        // Kiểm tra xem user có phải thành viên của nhóm không
+        if (!group.members.contains(this.clientId)) {
+            synchronized (dos) {
+                dos.writeInt(TYPE_GROUP_MEMBERS_RESPONSE);
+                dos.writeUTF(groupName);
+                dos.writeInt(0);
+                dos.flush();
+            }
+            return;
+        }
+        
+        // Lấy danh sách fullName của các thành viên
+        List<String> memberFullNames = new ArrayList<>();
+        for (String memberId : group.members) {
+            ClientHandler handler = clients.get(memberId);
+            if (handler != null) {
+                String displayName = handler.fullName;
+                if (memberId.equals(this.clientId)) {
+                    displayName += " (Bạn)";
+                }
+                memberFullNames.add(displayName);
+            }
+        }
+        
+        // Gửi response
+        synchronized (dos) {
+            dos.writeInt(TYPE_GROUP_MEMBERS_RESPONSE);
+            dos.writeUTF(groupName);
+            dos.writeInt(memberFullNames.size());
+            for (String fullName : memberFullNames) {
+                dos.writeUTF(fullName);
+            }
+            dos.flush();
+        }
+        
+        addSystemLog(this.fullName + " đã yêu cầu xem danh sách thành viên nhóm " + group.groupFullName);
     }
 
     // ========================= VOICE CALL ===========================

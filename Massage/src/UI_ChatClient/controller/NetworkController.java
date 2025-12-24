@@ -12,8 +12,10 @@ import javax.imageio.ImageIO;
 import com.github.sarxos.webcam.Webcam;
 
 import UI_ChatClient.model.Constants;
+import UI_ChatClient.Client;
 import UI_ChatClient.model.ChatState;
 import UI_ChatClient.view.dialogs.*;
+import server.app.ServerApp;
 
 /**
  * Controller xử lý kết nối mạng TCP/UDP
@@ -25,6 +27,8 @@ public class NetworkController {
     private DatagramSocket udpSocket;
     private InetSocketAddress serverUdpAddress;
     private Thread udpReceiverThread;
+    private Client client;
+
     
     private ChatState chatState;
     private MessageHandler messageHandler;
@@ -181,6 +185,13 @@ public class NetworkController {
                 handleGroupMembersResponse();
                 break;
             }
+            case Constants.TYPE_AVATAR_UPDATED: {
+                String username = dis.readUTF();
+                String avatarPath = dis.readUTF();
+                client.onAvatarUpdated(username, avatarPath);
+                break;
+            }
+
         }
     }
     

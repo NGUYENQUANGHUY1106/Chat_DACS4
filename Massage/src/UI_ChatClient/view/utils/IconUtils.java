@@ -44,4 +44,9 @@ public class IconUtils {
         Image scaledImg = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
         return new ImageIcon(scaledImg);
     }
+    public static ImageIcon scaleImageIcon(ImageIcon icon, int w, int h) {
+        Image img = icon.getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH);
+        return new ImageIcon(img);
+    }
+
 }

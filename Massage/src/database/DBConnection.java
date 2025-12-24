@@ -5,11 +5,12 @@ import java.sql.DriverManager;
 
 public class DBConnection {
    
-    private static final String URL =
-        "jdbc:mysql://192.168.195.189:3306/chat_client?useSSL=false&serverTimezone=UTC";
+	private static final String URL =
+		    "jdbc:mysql://192.168.195.189:3306/chat_client?useSSL=false&serverTimezone=UTC";
 
-    private static final String USER = "chatuser";
-    private static final String PASSWORD = "1234";   
+		private static final String USER = "chat";
+		private static final String PASSWORD = "1234";
+  
 
     public static Connection getConnection() {
         Connection conn = null;

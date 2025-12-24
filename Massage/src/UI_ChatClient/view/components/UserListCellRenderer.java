@@ -73,46 +73,64 @@ public class UserListCellRenderer extends JPanel implements ListCellRenderer<Use
         add(rightPanel, BorderLayout.EAST);
     }
 
-    @Override
-    public Component getListCellRendererComponent(JList<? extends UserDisplay> list, UserDisplay user, int index,
-                                                  boolean isSelected, boolean cellHasFocus) {
-        
-        lblName.setText(user.getFullName());
-        
-        if (user.isGroup()) {
-            lblIcon.setIcon(IconUtils.loadAndScaleIcon("user.png", 40, 40));
-            lblStatus.setText("Nhóm chat");
-            lblStatus.setForeground(new Color(156, 163, 175));
-        } else if (user.getUsername().equals("Server (Admin)")) {
-            lblIcon.setIcon(IconUtils.loadAndScaleIcon("avatar.jpg", 40, 40));
-            lblStatus.setText("Quản trị viên");
-            lblStatus.setForeground(new Color(251, 191, 36));
-        } else {
-            lblIcon.setIcon(IconUtils.loadAndScaleIcon("avatar.jpg", 40, 40));
-            lblStatus.setText(user.isOnline() ? "Đang hoạt động" : "Không hoạt động");
-            lblStatus.setForeground(user.isOnline() ? Constants.ONLINE_COLOR : new Color(107, 114, 128));
-        }
-        statusIcon.setOnline(!user.isGroup() && user.isOnline());
-        
-        // Hiển thị badge số tin nhắn chưa đọc
-        if (user.getUnreadCount() > 0) {
-            lblUnreadBadge.setText(String.valueOf(user.getUnreadCount()));
-            lblUnreadBadge.setVisible(true);
-        } else {
-            lblUnreadBadge.setVisible(false);
-        }
-        
-        if (isSelected) {
-            setBackground(Constants.HOVER_COLOR);
-            lblName.setForeground(Constants.PRIMARY_DARK);
-        } else {
-            setBackground(Constants.SIDEBAR_BG_COLOR);
-            lblName.setForeground(Constants.SIDEBAR_TEXT_COLOR);
-        }
-        
-        setEnabled(list.isEnabled());
-        setOpaque(true);
-        
-        return this;
+@Override
+public Component getListCellRendererComponent(
+        JList<? extends UserDisplay> list,
+        UserDisplay user,
+        int index,
+        boolean isSelected,
+        boolean cellHasFocus) {
+
+    lblName.setText(user.getFullName());
+
+    // ===== AVATAR =====
+    ImageIcon avatar = user.getAvatar();
+    if (avatar != null) {
+        lblIcon.setIcon(IconUtils.scaleImageIcon(avatar, 40, 40));
+    } else {
+        lblIcon.setIcon(IconUtils.loadAndScaleIcon("avatar.jpg", 40, 40));
     }
+
+    // ===== STATUS TEXT =====
+    if (user.isGroup()) {
+        lblStatus.setText("Nhóm chat");
+        lblStatus.setForeground(new Color(156, 163, 175));
+    } else if (user.getUsername().equals("Server (Admin)")) {
+        lblStatus.setText("Quản trị viên");
+        lblStatus.setForeground(new Color(251, 191, 36));
+    } else {
+        lblStatus.setText(user.isOnline() ? "Đang hoạt động" : "Không hoạt động");
+        lblStatus.setForeground(
+                user.isOnline()
+                        ? Constants.ONLINE_COLOR
+                        : new Color(107, 114, 128)
+        );
+    }
+
+    // ===== ONLINE DOT =====
+    statusIcon.setOnline(!user.isGroup() && user.isOnline());
+
+    // ===== UNREAD BADGE =====
+    if (user.getUnreadCount() > 0) {
+        lblUnreadBadge.setText(String.valueOf(user.getUnreadCount()));
+        lblUnreadBadge.setVisible(true);
+    } else {
+        lblUnreadBadge.setVisible(false);
+    }
+
+    // ===== SELECT EFFECT =====
+    if (isSelected) {
+        setBackground(Constants.HOVER_COLOR);
+        lblName.setForeground(Constants.PRIMARY_DARK);
+    } else {
+        setBackground(Constants.SIDEBAR_BG_COLOR);
+        lblName.setForeground(Constants.SIDEBAR_TEXT_COLOR);
+    }
+
+    setEnabled(list.isEnabled());
+    setOpaque(true);
+
+    return this;
+}
+
 }

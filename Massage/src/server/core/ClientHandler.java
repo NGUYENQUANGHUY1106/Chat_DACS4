@@ -50,6 +50,7 @@ public class ClientHandler implements Runnable {
     DataInputStream dis;
     public DataOutputStream dos;
 
+
     private final JPanel chatPanel;
     private final JScrollPane scrollPane;
 
@@ -70,6 +71,10 @@ public class ClientHandler implements Runnable {
 
         this.scrollPane = new JScrollPane(chatPanel);
         this.scrollPane.setBorder(BorderFactory.createEmptyBorder());
+    }
+    
+    public DataOutputStream getOutputStream() {
+        return dos;
     }
 
     

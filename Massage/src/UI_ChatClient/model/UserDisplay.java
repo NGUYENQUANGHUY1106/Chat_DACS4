@@ -1,14 +1,37 @@
 package UI_ChatClient.model;
 
+import javax.swing.ImageIcon;
+
 /**
  * Lớp đại diện cho một người dùng hoặc nhóm trong danh sách chat
  */
 public class UserDisplay {
-    private String username;    // ID (SĐT hoặc Tên Nhóm)
-    private String fullName;    // Tên hiển thị
-    private boolean isGroup;    // Cờ để phân biệt User/Group
-    private boolean isOnline;   // Cờ trạng thái online
-    private int unreadCount;    // Số tin nhắn chưa đọc
+	 private String username;
+	    private String fullName;
+	    private boolean isGroup;
+	    private boolean isOnline;
+	    private int unreadCount;
+
+	 
+	    private ImageIcon avatar;
+
+	    public UserDisplay(String username, String fullName,
+	                       boolean isGroup, boolean isOnline,
+	                       ImageIcon avatar) {
+	        this.username = username;
+	        this.fullName = fullName;
+	        this.isGroup = isGroup;
+	        this.isOnline = isOnline;
+	        this.avatar = avatar;
+	    }
+
+	    public ImageIcon getAvatar() {
+	        return avatar;
+	    }
+
+	    public void setAvatar(ImageIcon avatar) {
+	        this.avatar = avatar;
+	    }   // Số tin nhắn chưa đọc
 
     public UserDisplay(String username, String fullName, boolean isGroup, boolean isOnline) {
         this.username = username;

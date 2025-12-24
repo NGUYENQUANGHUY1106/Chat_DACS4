@@ -52,6 +52,9 @@ public class Client extends JFrame {
     private CardLayout cardLayout;
     private Map<String, JPanel> chatPanes;
     private Map<String, JScrollPane> chatScrollPanes;
+    private JLabel lblCurrentUser;
+    private static final String AVATAR_DIR = "avatars";
+
 
     // === AVATAR USER ĐANG ĐĂNG NHẬP ===
     private ImageIcon currentUserAvatarIcon;
@@ -370,15 +373,26 @@ public class Client extends JFrame {
         sidebarFooterPanel.setOpaque(false);
         sidebarFooterPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
 
-        JLabel lblCurrentUser = new JLabel(" " + fullName);
+        lblCurrentUser = new JLabel(" " + fullName);
         lblCurrentUser.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblCurrentUser.setForeground(Constants.SIDEBAR_TEXT_COLOR);
 
-        // Nếu DB có avatar -> dùng, không thì dùng mặc định
+        // Avatar
         if (currentUserAvatarIcon == null) {
             currentUserAvatarIcon = loadIcon("avatar.jpg", 36, 36);
         }
         lblCurrentUser.setIcon(currentUserAvatarIcon);
+        lblCurrentUser.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        lblCurrentUser.setToolTipText("Nhấn để đổi avatar");
+
+        // 👉 CLICK AVATAR
+        lblCurrentUser.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                changeAvatar();
+            }
+        });
+
 
         JButton btnLogout = new JButton();
         btnLogout.setIcon(loadIcon("logout.png", 24, 24));
@@ -914,7 +928,11 @@ public class Client extends JFrame {
             String username = dis.readUTF();
             String fullName = dis.readUTF();
             boolean isOnline = dis.readBoolean();
-            tempModel.addElement(new UserDisplay(username, fullName, false, isOnline));
+            ImageIcon avatar = loadUserAvatarFromDB(username);
+            tempModel.addElement(
+                new UserDisplay(username, fullName, false, isOnline, avatar)
+            );
+
         }
 
         int groupCount = dis.readInt();
@@ -943,6 +961,24 @@ public class Client extends JFrame {
                 }
             }
         });
+    }
+     
+    public void onAvatarUpdated(String username, String avatarPath) {
+        SwingUtilities.invokeLater(() -> {
+            updateUserAvatar(username, avatarPath);
+        });
+    }
+
+    private void updateUserAvatar(String username, String avatarPath) {
+        for (int i = 0; i < userListModel.size(); i++) {
+            UserDisplay u = userListModel.get(i);
+            if (u.getUsername().equals(username)) {
+                ImageIcon avatar = createAvatarIcon(avatarPath, 40, 40);
+                u.setAvatar(avatar);
+                userList.repaint();
+                break;
+            }
+        }
     }
 
     private void handleReceivePrivateMessage(DataInputStream dis) throws IOException {
@@ -1038,6 +1074,66 @@ public class Client extends JFrame {
         if (!chatTarget.equals(chatState.getCurrentChatTarget())) {
             incrementUnreadCount(chatTarget);
             playNotificationSound();
+        }
+    }
+     // Thay đổi Avatar 
+    private void changeAvatar() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Chọn ảnh đại diện");
+        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                "Image files", "png", "jpg", "jpeg"));
+
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = chooser.getSelectedFile();
+
+            try {
+                // Tạo thư mục avatars
+                File avatarDir = new File(AVATAR_DIR);
+                if (!avatarDir.exists()) avatarDir.mkdirs();
+
+                // Tạo tên file mới
+                String ext = selectedFile.getName()
+                        .substring(selectedFile.getName().lastIndexOf("."));
+                String fileName = chatState.getMyUsername()
+                        + "_" + System.currentTimeMillis() + ext;
+
+                File destFile = new File(avatarDir, fileName);
+
+                // Copy ảnh
+                copyFile(selectedFile, destFile);
+
+                // Lưu DB
+                String avatarPath = AVATAR_DIR + "/" + fileName;
+                updateAvatarInDB(avatarPath);
+
+                // Update UI
+                ImageIcon newAvatar = createAvatarIcon(avatarPath, 36, 36);
+                lblCurrentUser.setIcon(newAvatar);
+                currentUserAvatarIcon = newAvatar;
+
+                JOptionPane.showMessageDialog(this,
+                        "Đổi avatar thành công!",
+                        "Thành công",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi đổi avatar: " + ex.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    private void updateAvatarInDB(String avatarPath) throws SQLException {
+        String sql = "UPDATE users SET avatar = ? WHERE username = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, avatarPath);
+            ps.setString(2, chatState.getMyUsername());
+            ps.executeUpdate();
         }
     }
 

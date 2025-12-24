@@ -1836,8 +1836,6 @@ public class Client extends JFrame {
      */
     private void showViewGroupMembers(String groupId, String groupFullName) {
         // Hiển thị loading message
-        addSystemMessage_Safe(groupId, "Đang tải danh sách thành viên...");
-        
         try {
             System.out.println("DEBUG: Sending request to get members of group: " + groupId);
             // Gửi request lấy danh sách thành viên từ server với groupId

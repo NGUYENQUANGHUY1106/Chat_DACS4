@@ -524,9 +524,20 @@ public class NetworkController {
             members[i] = dis.readUTF();
         }
         
+        System.out.println("DEBUG: Received group members response for " + groupName + " with " + count + " members");
+        
         if (currentGroupMembersCallback != null) {
-            currentGroupMembersCallback.onMembersReceived(groupName, members);
+            GroupMembersCallback callback = currentGroupMembersCallback;
             currentGroupMembersCallback = null;
+            
+            // Gọi callback trong EDT thread
+            String[] finalMembers = members;
+            String finalGroupName = groupName;
+            SwingUtilities.invokeLater(() -> {
+                callback.onMembersReceived(finalGroupName, finalMembers);
+            });
+        } else {
+            System.out.println("DEBUG: No callback registered for group members response");
         }
     }
     

@@ -1742,10 +1742,12 @@ public class Client extends JFrame {
         addSystemMessage_Safe(groupName, "Đang tải danh sách thành viên...");
         
         try {
+            System.out.println("DEBUG: Sending request to get members of group: " + groupName);
             // Gửi request lấy danh sách thành viên từ server
             networkController.sendGetGroupMembersRequest(groupName, new NetworkController.GroupMembersCallback() {
                 @Override
                 public void onMembersReceived(String receivedGroupName, String[] members) {
+                    System.out.println("DEBUG: Callback received with " + members.length + " members");
                     SwingUtilities.invokeLater(() -> {
                         if (members == null || members.length == 0) {
                             JOptionPane.showMessageDialog(Client.this, 
@@ -1793,29 +1795,23 @@ public class Client extends JFrame {
             // Gửi request rời nhóm tới server
             networkController.sendLeaveGroupRequest(groupName);
             
-            // Xóa chat tab của nhóm
-            chatPanes.remove(groupName);
-            chatScrollPanes.remove(groupName);
-            
-            // Xóa nhóm khỏi danh sách user
-            for (int i = 0; i < userListModel.getSize(); i++) {
-                UserDisplay user = userListModel.getElementAt(i);
-                if (user.getUsername().equals(groupName)) {
-                    userListModel.remove(i);
-                    break;
+            // Server sẽ broadcast user list update, và khi đó UI sẽ tự động cập nhật
+            // Chỉ cần xóa chat pane local và chuyển về welcome
+            SwingUtilities.invokeLater(() -> {
+                // Xóa chat tab của nhóm
+                chatPanes.remove(groupName);
+                chatScrollPanes.remove(groupName);
+                
+                // Chuyển về welcome panel nếu đang chat với nhóm này
+                if (groupName.equals(chatState.getCurrentChatTarget())) {
+                    cardLayout.show(chatWindowsPanel, "WELCOME_PANEL");
+                    lblChattingWith.setText(" Chọn 1 người để chat");
+                    chatState.setCurrentChatTarget(null);
+                    chatState.setCurrentChatIsGroup(false);
                 }
-            }
+            });
             
-            // Chuyển về welcome panel
-            cardLayout.show(chatWindowsPanel, "WELCOME_PANEL");
-            lblChattingWith.setText(" Chọn 1 người để chat");
-            chatState.setCurrentChatTarget(null);
-            chatState.setCurrentChatIsGroup(false);
-            
-            JOptionPane.showMessageDialog(this,
-                "Bạn đã rời khỏi nhóm \"" + groupName + "\" thành công.",
-                "Thông báo",
-                JOptionPane.INFORMATION_MESSAGE);
+            // Thông báo sẽ được hiển thị qua system message từ server
                 
         } catch (IOException e) {
             e.printStackTrace();

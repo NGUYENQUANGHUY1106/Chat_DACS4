@@ -754,7 +754,8 @@ public class Client extends JFrame {
             if (chatState.isCurrentChatIsGroup() && chatState.getCurrentChatTarget() != null) {
                 UserDisplay selectedGroup = userList.getSelectedValue();
                 if (selectedGroup != null && selectedGroup.isGroup()) {
-                    showGroupOptionsDialog(selectedGroup.getFullName());
+                    // Truyền groupId (username) chứ không phải fullName
+                    showGroupOptionsDialog(selectedGroup.getUsername(), selectedGroup.getFullName());
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Vui lòng chọn một nhóm để xem tùy chọn.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
@@ -1720,31 +1721,31 @@ public class Client extends JFrame {
     /**
      * Hiển thị menu tùy chọn cho nhóm
      */
-    private void showGroupOptionsDialog(String groupName) {
-        GroupOptionsDialog dialog = new GroupOptionsDialog(this, groupName);
+    private void showGroupOptionsDialog(String groupId, String groupFullName) {
+        GroupOptionsDialog dialog = new GroupOptionsDialog(this, groupFullName);
         dialog.setVisible(true);
         
         int option = dialog.getSelectedOption();
         if (option == 0) {
-            // Xem thành viên nhóm
-            showViewGroupMembers(groupName);
+            // Xem thành viên nhóm - gửi groupId
+            showViewGroupMembers(groupId, groupFullName);
         } else if (option == 1) {
-            // Rời nhóm
-            showLeaveGroupConfirmation(groupName);
+            // Rời nhóm - gửi groupId
+            showLeaveGroupConfirmation(groupId, groupFullName);
         }
     }
     
     /**
      * Hiển thị danh sách thành viên trong nhóm
      */
-    private void showViewGroupMembers(String groupName) {
+    private void showViewGroupMembers(String groupId, String groupFullName) {
         // Hiển thị loading message
-        addSystemMessage_Safe(groupName, "Đang tải danh sách thành viên...");
+        addSystemMessage_Safe(groupId, "Đang tải danh sách thành viên...");
         
         try {
-            System.out.println("DEBUG: Sending request to get members of group: " + groupName);
-            // Gửi request lấy danh sách thành viên từ server
-            networkController.sendGetGroupMembersRequest(groupName, new NetworkController.GroupMembersCallback() {
+            System.out.println("DEBUG: Sending request to get members of group: " + groupId);
+            // Gửi request lấy danh sách thành viên từ server với groupId
+            networkController.sendGetGroupMembersRequest(groupId, new NetworkController.GroupMembersCallback() {
                 @Override
                 public void onMembersReceived(String receivedGroupName, String[] members) {
                     System.out.println("DEBUG: Callback received with " + members.length + " members");
@@ -1757,7 +1758,7 @@ public class Client extends JFrame {
                             return;
                         }
                         
-                        ViewGroupMembersDialog dialog = new ViewGroupMembersDialog(Client.this, receivedGroupName, members);
+                        ViewGroupMembersDialog dialog = new ViewGroupMembersDialog(Client.this, groupFullName, members);
                         dialog.setVisible(true);
                     });
                 }
@@ -1774,36 +1775,36 @@ public class Client extends JFrame {
     /**
      * Hiển thị xác nhận rời nhóm
      */
-    private void showLeaveGroupConfirmation(String groupName) {
+    private void showLeaveGroupConfirmation(String groupId, String groupFullName) {
         int confirm = JOptionPane.showConfirmDialog(this,
-            "Bạn có chắc chắn muốn rời khỏi nhóm \"" + groupName + "\"?\n" +
+            "Bạn có chắc chắn muốn rời khỏi nhóm \"" + groupFullName + "\"?\n" +
             "Bạn sẽ không thể nhận tin nhắn từ nhóm này nữa.",
             "Xác nhận rời nhóm",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
         
         if (confirm == JOptionPane.YES_OPTION) {
-            leaveGroup(groupName);
+            leaveGroup(groupId);
         }
     }
     
     /**
      * Thực hiện rời nhóm
      */
-    private void leaveGroup(String groupName) {
+    private void leaveGroup(String groupId) {
         try {
-            // Gửi request rời nhóm tới server
-            networkController.sendLeaveGroupRequest(groupName);
+            // Gửi request rời nhóm tới server với groupId
+            networkController.sendLeaveGroupRequest(groupId);
             
             // Server sẽ broadcast user list update, và khi đó UI sẽ tự động cập nhật
             // Chỉ cần xóa chat pane local và chuyển về welcome
             SwingUtilities.invokeLater(() -> {
                 // Xóa chat tab của nhóm
-                chatPanes.remove(groupName);
-                chatScrollPanes.remove(groupName);
+                chatPanes.remove(groupId);
+                chatScrollPanes.remove(groupId);
                 
                 // Chuyển về welcome panel nếu đang chat với nhóm này
-                if (groupName.equals(chatState.getCurrentChatTarget())) {
+                if (groupId.equals(chatState.getCurrentChatTarget())) {
                     cardLayout.show(chatWindowsPanel, "WELCOME_PANEL");
                     lblChattingWith.setText(" Chọn 1 người để chat");
                     chatState.setCurrentChatTarget(null);

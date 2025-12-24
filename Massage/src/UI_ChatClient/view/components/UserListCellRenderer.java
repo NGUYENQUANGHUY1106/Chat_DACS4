@@ -83,7 +83,6 @@ public Component getListCellRendererComponent(
 
     lblName.setText(user.getFullName());
 
-    // ===== AVATAR =====
     ImageIcon avatar = user.getAvatar();
     if (avatar != null) {
         lblIcon.setIcon(IconUtils.scaleImageIcon(avatar, 40, 40));

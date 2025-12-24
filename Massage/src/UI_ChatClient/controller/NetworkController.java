@@ -188,9 +188,14 @@ public class NetworkController {
             case Constants.TYPE_AVATAR_UPDATED: {
                 String username = dis.readUTF();
                 String avatarPath = dis.readUTF();
+
+                System.out.println("[AVATAR_UPDATED] " + username + " -> " + avatarPath);
+
                 client.onAvatarUpdated(username, avatarPath);
                 break;
             }
+
+            
 
         }
     }

@@ -6,7 +6,9 @@ import javax.swing.SwingUtilities;
 import server.view.ServerAdminGUI;
 
 public class ServerApp {
-	public static final int TYPE_AVATAR_UPDATED = 120;
+	public static final int TYPE_UPDATE_AVATAR  = 900; // client -> server
+	public static final int TYPE_AVATAR_UPDATED = 901; // server -> client
+
 
 	public static void main(String[] args) {
 

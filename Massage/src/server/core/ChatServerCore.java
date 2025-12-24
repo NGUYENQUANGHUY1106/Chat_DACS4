@@ -21,6 +21,7 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
+import UI_ChatClient.model.Constants;
 import server.model.GroupInfo;
 import server.model.UserDisplay;
 import server.view.DashboardPanel;
@@ -79,7 +80,9 @@ public class ChatServerCore {
     public static final int TCP_PORT = 1234;
     public static final int UDP_PORT = 1235;
     public static final int UDP_TYPE_REGISTER_CLIENT = 99;
-    public static final int AVATAR_UPDATED = 120;
+    public static final int TYPE_UPDATE_AVATAR  = 900; // client -> server
+    public static final int TYPE_AVATAR_UPDATED = 901; // server -> client
+
 
 
     public static DatagramSocket udpSocket;
@@ -209,11 +212,11 @@ groupList = groupListComp;
     }
      
     
-    public void broadcastAvatarUpdate(String username, String avatarPath) {
+    public static void broadcastAvatarUpdate(String username, String avatarPath) {
         for (ClientHandler ch : clients.values()) {
             try {
                 DataOutputStream dos = ch.getOutputStream();
-                dos.writeInt(AVATAR_UPDATED);
+                dos.writeInt(Constants.TYPE_AVATAR_UPDATED);
                 dos.writeUTF(username);
                 dos.writeUTF(avatarPath);
                 dos.flush();
@@ -222,6 +225,7 @@ groupList = groupListComp;
             }
         }
     }
+
 
     // ======================================================
     // BROADCAST / HỖ TRỢ LOGIC

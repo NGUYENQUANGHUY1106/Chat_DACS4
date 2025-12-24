@@ -45,7 +45,9 @@ public final class Constants {
     public static final int TYPE_LEAVE_GROUP_REQUEST = 37;
     public static final int TYPE_GET_GROUP_MEMBERS_REQUEST = 38;
     public static final int TYPE_GROUP_MEMBERS_RESPONSE = 39;
-    public static final int TYPE_AVATAR_UPDATED = 120;
+    public static final int TYPE_UPDATE_AVATAR  = 900; // client -> server
+    public static final int TYPE_AVATAR_UPDATED = 901; // server -> client
+
 
 
     // === CẤU HÌNH SERVER ===

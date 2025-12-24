@@ -975,11 +975,14 @@ public class Client extends JFrame {
             if (u.getUsername().equals(username)) {
                 ImageIcon avatar = createAvatarIcon(avatarPath, 40, 40);
                 u.setAvatar(avatar);
-                userList.repaint();
+
+                // 🔥 BẮT BUỘC
+                userListModel.set(i, u);   // trigger ListDataEvent
                 break;
             }
         }
     }
+
 
     private void handleReceivePrivateMessage(DataInputStream dis) throws IOException {
         String fromUser = dis.readUTF();

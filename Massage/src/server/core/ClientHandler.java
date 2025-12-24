@@ -19,6 +19,7 @@ import java.net.SocketAddress;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -174,6 +175,31 @@ public class ClientHandler implements Runnable {
                     case TYPE_GET_GROUP_MEMBERS_REQUEST:
                         handleGetGroupMembersRequest();
                         break;
+                    case TYPE_UPDATE_AVATAR: {
+                        String username = dis.readUTF();
+                        String avatarFileName = dis.readUTF();
+
+                        // update DB
+                        String sql = "UPDATE users SET avatar = ? WHERE username = ?";
+                        try (Connection conn = DBConnection.getConnection();
+                             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+                            ps.setString(1, avatarFileName);
+                            ps.setString(2, username);
+                            ps.executeUpdate();
+
+                            addSystemLog("SERVER: " + username + " đổi avatar -> " + avatarFileName);
+                        } catch (SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+
+                        // broadcast
+                        broadcastAvatarUpdate(username, avatarFileName);
+                        break;
+                    }
+
+
 
                     default:
                         addSystemLog("Nhận được gói tin TCP không rõ: " + dataType + " từ " + this.clientId);
@@ -225,6 +251,7 @@ public class ClientHandler implements Runnable {
             }
         }
     }
+   
 
     // ====================== CALL GROUP / INVITE =====================
 

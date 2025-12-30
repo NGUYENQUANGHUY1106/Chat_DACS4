@@ -653,7 +653,11 @@ public class Client extends JFrame {
                         loadMessagesFromStorage(chatState.getCurrentChatTarget());
                     }
                     cardLayout.show(chatWindowsPanel, chatState.getCurrentChatTarget());
+<<<<<<< Updated upstream
                     lblChattingWith.setText("" + selectedUser.getFullName());
+=======
+                    lblChattingWith.setText(selectedUser.getFullName());
+>>>>>>> Stashed changes
 
                     if (chatState.isCurrentChatIsGroup()) {
                         btnUser.setToolTipText("Thêm thành viên vào: " + selectedUser.getFullName());
@@ -820,10 +824,14 @@ public class Client extends JFrame {
                 networkController.sendPrivateMessage(chatState.getCurrentChatTarget(), message);
             }
 
+<<<<<<< Updated upstream
             String displayMsg = chatState.getMyFullName() + ": " + message;
             addMessageToPanel(chatState.getCurrentChatTarget(), displayMsg, true, false);
             // Lưu tin nhắn vào storage
             saveTextMessageToStorage(chatState.getCurrentChatTarget(), displayMsg, true);
+=======
+            addMessageToPanel(chatState.getCurrentChatTarget(),   message, true, false);
+>>>>>>> Stashed changes
             txtMessageInput.setText("");
 
         } catch (Exception e) {

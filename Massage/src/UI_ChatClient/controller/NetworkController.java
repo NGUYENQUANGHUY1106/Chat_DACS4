@@ -70,10 +70,6 @@ public class NetworkController {
     }
     
     public void connect(String username) throws IOException {
-<<<<<<< Updated upstream
-=======
-        
->>>>>>> Stashed changes
         Socket socket = new Socket(Constants.SERVER_IP, Constants.TCP_PORT);
         dis = new DataInputStream(socket.getInputStream());
         dos = new DataOutputStream(socket.getOutputStream());
@@ -84,18 +80,9 @@ public class NetworkController {
             dos.flush();
         }
         
-<<<<<<< Updated upstream
-=======
-        
->>>>>>> Stashed changes
         Thread readerThread = new Thread(() -> runTcpReader());
         readerThread.setDaemon(true);
         readerThread.start();
-        
-<<<<<<< Updated upstream
-=======
-        
->>>>>>> Stashed changes
         udpSocket = new DatagramSocket();
         serverUdpAddress = new InetSocketAddress(Constants.SERVER_IP, Constants.UDP_PORT);
         

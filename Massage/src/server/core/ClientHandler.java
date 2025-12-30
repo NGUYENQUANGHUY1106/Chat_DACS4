@@ -460,9 +460,10 @@ public class ClientHandler implements Runnable {
         ClientHandler targetHandler = clients.get(targetUsername);
 
         if (targetHandler != null) {
-            String formattedMessageForClient = this.fullName + ": " + message;
-            targetHandler.sendPrivateMessage(this.clientId, formattedMessageForClient);
+            // Gửi chỉ nội dung tin nhắn cho client (không có tên)
+            targetHandler.sendPrivateMessage(this.clientId, message);
 
+            // Hiển thị trên server GUI với tên đầy đủ
             String formattedMessageForServer = this.fullName + " -> " + targetHandler.fullName + ": " + message;
 
             this.addClientMessageToServerGUI(formattedMessageForServer);

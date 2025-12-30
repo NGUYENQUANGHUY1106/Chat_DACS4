@@ -1,12 +1,4 @@
-{"sender":"0972400000","content":"quang1: aloo","timestamp":"2025-12-30 16:01:23","type":"TEXT","isMyMessage":true,"filePath":""}
-{"sender":"0968380641","content":"quang1: aloo","timestamp":"2025-12-30 16:01:23","type":"TEXT","isMyMessage":false,"filePath":""}
-{"sender":"0972400000","content":"quang1: nghe hcows","timestamp":"2025-12-30 16:01:25","type":"TEXT","isMyMessage":true,"filePath":""}
-{"sender":"0968380641","content":"quang1: nghe hcows","timestamp":"2025-12-30 16:01:26","type":"TEXT","isMyMessage":false,"filePath":""}
-{"sender":"0968380641","content":"nwuang: nghe ổn","timestamp":"2025-12-30 16:01:29","type":"TEXT","isMyMessage":true,"filePath":""}
-{"sender":"0972400000","content":"nwuang: nghe ổn","timestamp":"2025-12-30 16:01:29","type":"TEXT","isMyMessage":false,"filePath":""}
-{"sender":"0968380641","content":"nwuang: nghe","timestamp":"2025-12-30 16:02:48","type":"TEXT","isMyMessage":true,"filePath":""}
-{"sender":"0972400000","content":"nwuang: nghe","timestamp":"2025-12-30 16:02:48","type":"TEXT","isMyMessage":false,"filePath":""}
-{"sender":"0968380641","content":"nwuang: nghe","timestamp":"2025-12-30 16:15:10","type":"TEXT","isMyMessage":true,"filePath":""}
-{"sender":"0972400000","content":"nwuang: nghe","timestamp":"2025-12-30 16:15:10","type":"TEXT","isMyMessage":false,"filePath":""}
-{"sender":"0972400000","content":"quang1: nghe nè","timestamp":"2025-12-30 16:19:08","type":"TEXT","isMyMessage":true,"filePath":""}
-{"sender":"0968380641","content":"quang1: nghe nè","timestamp":"2025-12-30 16:19:08","type":"TEXT","isMyMessage":false,"filePath":""}
+{"sender":"0972400000","content":"quang1: alooo","timestamp":"2025-12-30 16:29:08","type":"TEXT","isMyMessage":true,"filePath":""}
+{"sender":"0968380641","content":"quang1: alooo","timestamp":"2025-12-30 16:29:08","type":"TEXT","isMyMessage":false,"filePath":""}
+{"sender":"0972400000","content":"nghe nè","timestamp":"2025-12-30 16:31:34","type":"TEXT","isMyMessage":true,"filePath":""}
+{"sender":"0968380641","content":"quang1: nghe nè","timestamp":"2025-12-30 16:31:34","type":"TEXT","isMyMessage":false,"filePath":""}

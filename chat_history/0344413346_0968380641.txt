@@ -1,0 +1,3 @@
+{"sender":"0968380641","content":"nwuang: alooo","timestamp":"2025-12-30 16:27:24","type":"TEXT","isMyMessage":true,"filePath":""}
+{"sender":"0968380641","content":"nwuang: nghe","timestamp":"2025-12-30 16:27:32","type":"TEXT","isMyMessage":true,"filePath":""}
+{"sender":"0968380641","content":"huy: alo","timestamp":"2025-12-30 16:27:39","type":"TEXT","isMyMessage":false,"filePath":""}

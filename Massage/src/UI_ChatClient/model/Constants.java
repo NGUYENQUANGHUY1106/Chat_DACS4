@@ -45,18 +45,16 @@ public final class Constants {
     public static final int TYPE_LEAVE_GROUP_REQUEST = 37;
     public static final int TYPE_GET_GROUP_MEMBERS_REQUEST = 38;
     public static final int TYPE_GROUP_MEMBERS_RESPONSE = 39;
-    public static final int TYPE_UPDATE_AVATAR  = 900; // client -> server
-    public static final int TYPE_AVATAR_UPDATED = 901; // server -> client
+    public static final int TYPE_UPDATE_AVATAR  = 900;
+    public static final int TYPE_AVATAR_UPDATED = 901;
 
 
 
-    // === CẤU HÌNH SERVER ===
     public static final String SERVER_IP = "192.168.195.189";
     public static final int TCP_PORT = 1234;
     public static final int UDP_PORT = 1235;
     public static final int UDP_TYPE_REGISTER_CLIENT = 99;
     
-    // === BẢNG MÀU GRADIENT TRẮNG - XANH NGỌC NHẠT ===
     public static final Color PRIMARY_COLOR = new Color(94, 234, 212);       // Xanh ngọc chính (Teal-300)
     public static final Color PRIMARY_DARK = new Color(45, 212, 191);        // Xanh ngọc đậm (Teal-400)
     public static final Color PRIMARY_LIGHT = new Color(153, 246, 228);      // Xanh ngọc nhạt (Teal-200)

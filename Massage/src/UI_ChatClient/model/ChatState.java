@@ -1,5 +1,8 @@
 package UI_ChatClient.model;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Lớp chứa trạng thái chat hiện tại
  */
@@ -8,6 +11,9 @@ public class ChatState {
     private String myFullName;
     private String currentChatTarget;
     private boolean currentChatIsGroup;
+    
+    // Lưu lịch sử những người đã từng chat (để giữ họ trong danh sách khi offline)
+    private Set<String> chatHistory;
     
     // Trạng thái cuộc gọi
     private boolean inCall;
@@ -20,6 +26,7 @@ public class ChatState {
         this.myFullName = myFullName;
         this.currentChatTarget = null;
         this.currentChatIsGroup = false;
+        this.chatHistory = new HashSet<>();
         this.inCall = false;
         this.inVideoCall = false;
         this.callPartnerUsername = null;
@@ -31,6 +38,7 @@ public class ChatState {
     public String getMyFullName() { return myFullName; }
     public String getCurrentChatTarget() { return currentChatTarget; }
     public boolean isCurrentChatIsGroup() { return currentChatIsGroup; }
+    public Set<String> getChatHistory() { return chatHistory; }
     public boolean isInCall() { return inCall; }
     public boolean isInVideoCall() { return inVideoCall; }
     public String getCallPartnerUsername() { return callPartnerUsername; }
@@ -45,4 +53,13 @@ public class ChatState {
     public void setInVideoCall(boolean inVideoCall) { this.inVideoCall = inVideoCall; }
     public void setCallPartnerUsername(String callPartnerUsername) { this.callPartnerUsername = callPartnerUsername; }
     public void setRecording(boolean recording) { isRecording = recording; }
+    
+    // Methods for chat history
+    public void addToChatHistory(String username) {
+        chatHistory.add(username);
+    }
+    
+    public boolean hasChatHistoryWith(String username) {
+        return chatHistory.contains(username);
+    }
 }

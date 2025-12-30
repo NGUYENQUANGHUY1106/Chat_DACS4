@@ -58,6 +58,9 @@ public class Client extends JFrame {
 
     // === AVATAR USER ĐANG ĐĂNG NHẬP ===
     private ImageIcon currentUserAvatarIcon;
+    
+    // === MESSAGE STORAGE ===
+    private MessageStorage messageStorage;
 
     // === MAIN ===
     public static void main(String[] args) {
@@ -88,6 +91,9 @@ public class Client extends JFrame {
         this.chatState = new ChatState(username, fullName);
         this.chatPanes = new HashMap<>();
         this.chatScrollPanes = new HashMap<>();
+        
+        // Initialize message storage
+        this.messageStorage = new MessageStorage(username);
 
         // === LẤY AVATAR TỪ DB THEO USERNAME ===
         this.currentUserAvatarIcon = loadUserAvatarFromDB(username);
@@ -125,6 +131,8 @@ public class Client extends JFrame {
                 btnMic.setIcon(loadIcon("mic.png", 22, 22));
                 JPanel voicePanel = createVoiceMessagePanel("Tin nhắn thoại:", audioFile, true);
                 addComponentToChat(chatState.getCurrentChatTarget(), voicePanel);
+                // Lưu voice message gửi vào storage
+                saveVoiceToStorage(chatState.getCurrentChatTarget(), "Tin nhắn thoại:", audioFile, true);
                 sendVoiceMessage(audioFile);
             }
 
@@ -630,15 +638,22 @@ public class Client extends JFrame {
                 if (selectedUser != null) {
                     chatState.setCurrentChatTarget(selectedUser.getUsername());
                     chatState.setCurrentChatIsGroup(selectedUser.isGroup());
+                    
+                    // Lưu vào lịch sử chat (chỉ lưu user, không lưu group)
+                    if (!selectedUser.isGroup()) {
+                        chatState.addToChatHistory(selectedUser.getUsername());
+                    }
 
                     // Reset unread count khi mở chat
                     resetUnreadCount(selectedUser.getUsername());
 
                     if (!chatPanes.containsKey(chatState.getCurrentChatTarget())) {
                         createNewChatTab(chatState.getCurrentChatTarget(), selectedUser.getFullName());
+                        // Load tin nhắn cũ từ storage
+                        loadMessagesFromStorage(chatState.getCurrentChatTarget());
                     }
                     cardLayout.show(chatWindowsPanel, chatState.getCurrentChatTarget());
-                    lblChattingWith.setText(" Đang chat với: " + selectedUser.getFullName());
+                    lblChattingWith.setText("" + selectedUser.getFullName());
 
                     if (chatState.isCurrentChatIsGroup()) {
                         btnUser.setToolTipText("Thêm thành viên vào: " + selectedUser.getFullName());
@@ -713,6 +728,8 @@ public class Client extends JFrame {
                 File file = fileChooser.getSelectedFile();
                 JPanel filePanel = createFilePanel("", file, true);
                 addComponentToChat(chatState.getCurrentChatTarget(), filePanel);
+                // Lưu file gửi vào storage
+                saveFileToStorage(chatState.getCurrentChatTarget(), "File gửi:", file, true);
                 sendFile(file);
             }
         });
@@ -752,6 +769,8 @@ public class Client extends JFrame {
                     SwingUtilities.invokeLater(() -> {
                         JPanel locPanel = createLocationPanel("Vị trí:", mapLink, formattedTime, weather, true);
                         addComponentToChat(chatState.getCurrentChatTarget(), locPanel);
+                        // Lưu location gửi vào storage
+                        saveLocationToStorage(chatState.getCurrentChatTarget(), mapLink, formattedTime, weather, true);
                         sendLocation(lat, lon, formattedTime, weather);
                     });
                 }
@@ -801,7 +820,10 @@ public class Client extends JFrame {
                 networkController.sendPrivateMessage(chatState.getCurrentChatTarget(), message);
             }
 
-            addMessageToPanel(chatState.getCurrentChatTarget(), chatState.getMyFullName() + ": " + message, true, false);
+            String displayMsg = chatState.getMyFullName() + ": " + message;
+            addMessageToPanel(chatState.getCurrentChatTarget(), displayMsg, true, false);
+            // Lưu tin nhắn vào storage
+            saveTextMessageToStorage(chatState.getCurrentChatTarget(), displayMsg, true);
             txtMessageInput.setText("");
 
         } catch (Exception e) {
@@ -924,15 +946,17 @@ public class Client extends JFrame {
         int userCount = dis.readInt();
         DefaultListModel<UserDisplay> tempModel = new DefaultListModel<>();
 
+        // Lưu danh sách user online từ server
+        java.util.Map<String, UserDisplay> onlineUsers = new java.util.HashMap<>();
+        
         for (int i = 0; i < userCount; i++) {
             String username = dis.readUTF();
             String fullName = dis.readUTF();
             boolean isOnline = dis.readBoolean();
             ImageIcon avatar = loadUserAvatarFromDB(username);
-            tempModel.addElement(
-                new UserDisplay(username, fullName, false, isOnline, avatar)
-            );
-
+            UserDisplay user = new UserDisplay(username, fullName, false, isOnline, avatar);
+            onlineUsers.put(username, user);
+            tempModel.addElement(user);
         }
 
         int groupCount = dis.readInt();
@@ -947,9 +971,33 @@ public class Client extends JFrame {
             userListModel.clear();
             userListModel.addElement(new UserDisplay("Server (Admin)", "Server (Admin)", false, true));
 
+            // Thêm tất cả user online từ server
             Enumeration<UserDisplay> elements = tempModel.elements();
             while (elements.hasMoreElements()) {
                 userListModel.addElement(elements.nextElement());
+            }
+            
+            // Thêm những user đã từng chat nhưng hiện đang offline
+            for (String historicalUsername : chatState.getChatHistory()) {
+                // Kiểm tra xem user này đã có trong danh sách chưa
+                boolean alreadyInList = false;
+                for (int i = 0; i < userListModel.size(); i++) {
+                    if (userListModel.getElementAt(i).getUsername().equals(historicalUsername)) {
+                        alreadyInList = true;
+                        break;
+                    }
+                }
+                
+                // Nếu chưa có trong danh sách (tức là đang offline), thêm vào với trạng thái offline
+                if (!alreadyInList) {
+                    // Lấy thông tin user từ database
+                    ImageIcon avatar = loadUserAvatarFromDB(historicalUsername);
+                    String fullName = getFullNameFromDB(historicalUsername);
+                    if (fullName != null) {
+                        UserDisplay offlineUser = new UserDisplay(historicalUsername, fullName, false, false, avatar);
+                        userListModel.addElement(offlineUser);
+                    }
+                }
             }
 
             if (selected != null) {
@@ -987,7 +1035,13 @@ public class Client extends JFrame {
     private void handleReceivePrivateMessage(DataInputStream dis) throws IOException {
         String fromUser = dis.readUTF();
         String message = dis.readUTF();
+        
+        // Lưu vào lịch sử chat
+        chatState.addToChatHistory(fromUser);
+        
         addMessageToPanel(fromUser, message, false, false);
+        // Lưu tin nhắn nhận được vào storage
+        saveTextMessageToStorage(fromUser, message, false);
 
         if (!fromUser.equals(chatState.getCurrentChatTarget())) {
             incrementUnreadCount(fromUser);
@@ -999,6 +1053,8 @@ public class Client extends JFrame {
         String groupName = dis.readUTF();
         String message = dis.readUTF();
         addMessageToPanel(groupName, message, false, false);
+        // Lưu tin nhắn nhóm nhận được vào storage
+        saveTextMessageToStorage(groupName, message, false);
 
         if (!groupName.equals(chatState.getCurrentChatTarget())) {
             incrementUnreadCount(groupName);
@@ -1027,6 +1083,8 @@ public class Client extends JFrame {
         String chatTarget = dis.readUTF();
         JPanel filePanel = createFilePanel("", file, false);
         addComponentToChat(chatTarget, filePanel);
+        // Lưu file nhận được vào storage
+        saveFileToStorage(chatTarget, "File nhận:", file, false);
 
         if (!chatTarget.equals(chatState.getCurrentChatTarget())) {
             incrementUnreadCount(chatTarget);
@@ -1055,6 +1113,8 @@ public class Client extends JFrame {
         String chatTarget = dis.readUTF();
         JPanel voicePanel = createVoiceMessagePanel("Tin nhắn thoại:", file, false);
         addComponentToChat(chatTarget, voicePanel);
+        // Lưu voice message vào storage
+        saveVoiceToStorage(chatTarget, "Tin nhắn thoại:", file, false);
 
         if (!chatTarget.equals(chatState.getCurrentChatTarget())) {
             incrementUnreadCount(chatTarget);
@@ -1073,6 +1133,8 @@ public class Client extends JFrame {
         String chatTarget = dis.readUTF();
         JPanel locationPanel = createLocationPanel("Vị trí:", mapLink, time, weather, false);
         addComponentToChat(chatTarget, locationPanel);
+        // Lưu location vào storage
+        saveLocationToStorage(chatTarget, mapLink, time, weather, false);
 
         if (!chatTarget.equals(chatState.getCurrentChatTarget())) {
             incrementUnreadCount(chatTarget);
@@ -1997,6 +2059,28 @@ public class Client extends JFrame {
 
         return null; // dùng avatar mặc định phía trên
     }
+    
+    private String getFullNameFromDB(String username) {
+        String sql = "SELECT full_name FROM users WHERE username = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, username);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("full_name");
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Lỗi lấy full_name từ Database: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return username; // fallback to username if not found
+    }
 
     // ==========================
     //  TẠO ICON TỪ URL / FILE / RESOURCES
@@ -2047,5 +2131,166 @@ public class Client extends JFrame {
             System.err.println("Lỗi tạo avatar icon: " + e.getMessage());
             return loadIcon("avatar.jpg", w, h);
         }
+    }
+    
+    // === MESSAGE STORAGE METHODS ===
+    
+    /**
+     * Load tin nhắn từ storage khi mở chat
+     */
+    private void loadMessagesFromStorage(String chatTarget) {
+        if (chatTarget == null || chatTarget.equals("WELCOME") || chatTarget.equals("Server (Admin)")) {
+            return;
+        }
+        
+        java.util.List<MessageStorage.StoredMessage> messages = messageStorage.loadMessages(chatTarget);
+        
+        if (messages.isEmpty()) {
+            return; // Không có tin nhắn nào được lưu
+        }
+        
+        // Hiển thị tin nhắn đã lưu
+        for (MessageStorage.StoredMessage msg : messages) {
+            try {
+                switch (msg.type) {
+                    case TEXT:
+                        // Hiển thị tin nhắn văn bản
+                        addMessageToPanel_NoSave(chatTarget, msg.content, msg.isMyMessage, false);
+                        break;
+                        
+                    case FILE:
+                        // Hiển thị file
+                        if (msg.filePath != null && !msg.filePath.isEmpty()) {
+                            File file = new File(msg.filePath);
+                            if (file.exists()) {
+                                JPanel filePanel = createFilePanel(msg.content, file, msg.isMyMessage);
+                                addComponentToChat(chatTarget, filePanel);
+                            } else {
+                                // File không tồn tại, hiển thị thông báo
+                                addSystemMessage_Safe(chatTarget, "[File đã bị xóa: " + file.getName() + "]");
+                            }
+                        }
+                        break;
+                        
+                    case VOICE:
+                        // Hiển thị tin nhắn thoại
+                        if (msg.filePath != null && !msg.filePath.isEmpty()) {
+                            File file = new File(msg.filePath);
+                            if (file.exists()) {
+                                JPanel voicePanel = createVoiceMessagePanel(msg.content, file, msg.isMyMessage);
+                                addComponentToChat(chatTarget, voicePanel);
+                            } else {
+                                addSystemMessage_Safe(chatTarget, "[Tin nhắn thoại đã bị xóa]");
+                            }
+                        }
+                        break;
+                        
+                    case LOCATION:
+                        // Hiển thị vị trí (cần parse thông tin từ content)
+                        // Format: mapLink|time|weather
+                        String[] parts = msg.content.split("\\|");
+                        if (parts.length >= 3) {
+                            JPanel locPanel = createLocationPanel("Vị trí:", parts[0], parts[1], parts[2], msg.isMyMessage);
+                            addComponentToChat(chatTarget, locPanel);
+                        }
+                        break;
+                        
+                    case SYSTEM:
+                        // Tin nhắn hệ thống
+                        addSystemMessage_Safe(chatTarget, msg.content);
+                        break;
+                }
+            } catch (Exception e) {
+                System.err.println("Lỗi khi load tin nhắn: " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Thêm tin nhắn vào panel mà không lưu vào storage (dùng khi load từ storage)
+     */
+    private void addMessageToPanel_NoSave(String chatTarget, String message, boolean isMyMessage, boolean isSystem) {
+        Color bgColor = isMyMessage ? Constants.MY_MESSAGE_COLOR : (isSystem ? Constants.SYSTEM_MESSAGE_COLOR : Constants.OTHER_MESSAGE_COLOR);
+        JPanel bubblePanel = createMessageBubble(message, bgColor, isMyMessage, isSystem);
+        addComponentToChat(chatTarget, bubblePanel);
+    }
+    
+    /**
+     * Lưu tin nhắn văn bản vào storage
+     */
+    private void saveTextMessageToStorage(String chatTarget, String content, boolean isMyMessage) {
+        if (chatTarget == null || chatTarget.equals("WELCOME") || chatTarget.equals("Server (Admin)")) {
+            return;
+        }
+        
+        MessageStorage.StoredMessage msg = new MessageStorage.StoredMessage(
+            chatState.getMyUsername(),
+            content,
+            MessageStorage.MessageType.TEXT,
+            isMyMessage,
+            null
+        );
+        
+        messageStorage.saveMessage(chatTarget, msg);
+    }
+    
+    /**
+     * Lưu file vào storage
+     */
+    private void saveFileToStorage(String chatTarget, String prefix, File file, boolean isMyMessage) {
+        if (chatTarget == null || chatTarget.equals("WELCOME") || chatTarget.equals("Server (Admin)")) {
+            return;
+        }
+        
+        MessageStorage.StoredMessage msg = new MessageStorage.StoredMessage(
+            chatState.getMyUsername(),
+            prefix,
+            MessageStorage.MessageType.FILE,
+            isMyMessage,
+            file.getAbsolutePath()
+        );
+        
+        messageStorage.saveMessage(chatTarget, msg);
+    }
+    
+    /**
+     * Lưu tin nhắn thoại vào storage
+     */
+    private void saveVoiceToStorage(String chatTarget, String prefix, File file, boolean isMyMessage) {
+        if (chatTarget == null || chatTarget.equals("WELCOME") || chatTarget.equals("Server (Admin)")) {
+            return;
+        }
+        
+        MessageStorage.StoredMessage msg = new MessageStorage.StoredMessage(
+            chatState.getMyUsername(),
+            prefix,
+            MessageStorage.MessageType.VOICE,
+            isMyMessage,
+            file.getAbsolutePath()
+        );
+        
+        messageStorage.saveMessage(chatTarget, msg);
+    }
+    
+    /**
+     * Lưu vị trí vào storage
+     */
+    private void saveLocationToStorage(String chatTarget, String mapLink, String time, String weather, boolean isMyMessage) {
+        if (chatTarget == null || chatTarget.equals("WELCOME") || chatTarget.equals("Server (Admin)")) {
+            return;
+        }
+        
+        // Lưu thông tin location dạng mapLink|time|weather
+        String content = mapLink + "|" + time + "|" + weather;
+        
+        MessageStorage.StoredMessage msg = new MessageStorage.StoredMessage(
+            chatState.getMyUsername(),
+            content,
+            MessageStorage.MessageType.LOCATION,
+            isMyMessage,
+            null
+        );
+        
+        messageStorage.saveMessage(chatTarget, msg);
     }
 }

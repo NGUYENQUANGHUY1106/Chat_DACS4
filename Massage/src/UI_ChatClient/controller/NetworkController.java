@@ -70,7 +70,6 @@ public class NetworkController {
     }
     
     public void connect(String username) throws IOException {
-        // === 1. KẾT NỐI TCP ===
         Socket socket = new Socket(Constants.SERVER_IP, Constants.TCP_PORT);
         dis = new DataInputStream(socket.getInputStream());
         dos = new DataOutputStream(socket.getOutputStream());
@@ -81,12 +80,10 @@ public class NetworkController {
             dos.flush();
         }
         
-        // === 2. KHỞI CHẠY LUỒNG ĐỌC TCP ===
         Thread readerThread = new Thread(() -> runTcpReader());
         readerThread.setDaemon(true);
         readerThread.start();
         
-        // === 3. KẾT NỐI VÀ ĐĂNG KÝ UDP ===
         udpSocket = new DatagramSocket();
         serverUdpAddress = new InetSocketAddress(Constants.SERVER_IP, Constants.UDP_PORT);
         
